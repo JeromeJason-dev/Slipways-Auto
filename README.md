@@ -9,6 +9,7 @@ A single-page shop management dashboard for auto repair shops — track work ord
 - **Dashboard** — at-a-glance metrics (monthly revenue, open work orders, customers on file, low-stock parts), a 6-month revenue bar chart, and a work-order status breakdown.
 - **Work Orders** — searchable/filterable table of jobs, inline status updates, and a validated "New work order" form.
 - **Customers** — customer directory with visit history and lifetime spend, plus a validated "Add customer" form.
+- **Appointments** - where customers can book appointments for a service they want offered. 
 - **Invoices** — invoice list with totals for invoiced, paid, and outstanding amounts.
 - **Inventory** — parts tracking with low-stock and out-of-stock indicators.
 - **Reports** — year-to-date revenue trend line chart and summary KPIs.
