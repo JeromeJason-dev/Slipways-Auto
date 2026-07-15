@@ -172,7 +172,7 @@ export default function SlipwaysAutoHome() {
       {/* Our Services */}
       <section className="bg-[#0F1B2E] px-4 py-16 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-bold tracking-wide text-[#C81E2C]">
+          <p className="text-3xl font-bold tracking-wide text-[#C81E2C]">
             OUR SERVICES
           </p>
           <p className="mt-3 text-sm text-slate-300 sm:text-base">
