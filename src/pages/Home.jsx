@@ -196,9 +196,9 @@ export default function SlipwaysAutoHome() {
               <div className="p-5">
                 <h3 className="text-lg font-bold text-white">{s.title}</h3>
                 <p className="mt-2 text-sm text-slate-300">{s.desc}</p>
-                <button className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#C81E2C] hover:text-white">
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#C81E2C]">
                   Learn more <ChevronRight size={16} />
-                </button>
+                </span>
               </div>
             </div>
           ))}
