@@ -249,7 +249,7 @@ export default function SlipwaysAutoHome() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#0F1B2E] px-4 pb-6 pt-14 text-slate-300">
+      <footer className="bg-[#0F1B2E] px-9 pb-6 pt-14 text-slate-300">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="flex items-center gap-2">
