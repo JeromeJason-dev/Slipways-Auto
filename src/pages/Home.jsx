@@ -5,6 +5,7 @@ import {
   Users,
   Wrench,
   ChevronRight,
+  ArrowRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -92,27 +93,35 @@ export default function SlipwaysAutoHome() {
   return (
     <div className="min-h-screen w-full bg-white font-sans text-[#0F1B2E]">
       {/* Hero */}
-      <section className="bg-[#0F1B2E] px-4 pb-14 pt-10 sm:px-6 lg:px-10">
-        <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-3xl font-extrabold leading-tight text-white sm:text-5xl">
-            Reliable <span className="text-[#C81E2C]">Automotive</span>{" "}
-            Services Since 2005
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-sm text-slate-300 sm:text-base">
-            Your trusted neighborhood garage for complete car care — from
-            diagnostics and mechanical repairs to detailing and headlight
-            restoration. Backed by decades of experience.
-          </p>
-          <PrimaryButton className="mt-6 w-full sm:w-auto">
-            Book an appointment
-          </PrimaryButton>
-        </div>
-        <div className="mx-auto mt-10 max-w-6xl overflow-hidden rounded-xl">
-          <img
-            src="https://images.unsplash.com/photo-1567818735868-e71b99932e29?auto=format&fit=crop&w=1400&q=80"
-            alt="Garage with car on lift"
-            className="h-56 w-full object-cover sm:h-96"
-          />
+      <section className="bg-[#0F1B2E] px-4 py-10 sm:px-6 lg:px-6 lg:py-15">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-12">
+          {/* Left: text + CTA */}
+          <div className="w-full text-center lg:w-1/2 lg:text-left">
+            <h1 className="text-3xl font-extrabold leading-tight text-white sm:text-5xl">
+              Reliable <span className="text-[#C81E2C]">Automotive</span>{" "}
+              Services Since 2005
+            </h1>
+            <p className="mx-auto mt-5 max-w-xl text-sm text-slate-300 sm:text-base lg:mx-0 lg:max-w-none lg:pr-6">
+              Your trusted neighborhood garage for complete car care — from
+              diagnostics and mechanical repairs to detailing and headlight
+              restoration. Backed by decades of experience.
+            </p>
+            <Link to="/booking">
+              <PrimaryButton className="mt-6 w-full gap-2 sm:w-auto">
+                Book an appointment
+                <ArrowRight size={22} strokeWidth={2.5} />
+              </PrimaryButton>
+            </Link>
+          </div>
+
+          {/* Right: image */}
+          <div className="w-full overflow-hidden rounded-xl lg:w-1/2">
+            <img
+              src="https://images.unsplash.com/photo-1567818735868-e71b99932e29?auto=format&fit=crop&w=1400&q=80"
+              alt="Garage with car on lift"
+              className="h-64 w-full object-cover sm:h-80 lg:h-[420px]"
+            />
+          </div>
         </div>
       </section>
 
@@ -166,7 +175,6 @@ export default function SlipwaysAutoHome() {
             </div>
           </div>
         </div>
-
       </section>
 
       {/* Our Services */}
