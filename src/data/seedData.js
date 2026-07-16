@@ -1,0 +1,58 @@
+export const TECHS = ["Carlos R.", "Fatuma K.", "David O.", "Moses N."];
+export const STATUSES = ["Scheduled", "In progress", "Waiting parts", "Complete"];
+
+export const seedWorkOrders = [
+  { id: "WO-081", vehicle: "2019 Toyota Camry", owner: "James Odhiambo", phone: "0722001234", plate: "KCA 451A", service: "Brake pad replacement", tech: "Carlos R.", cost: 8500, status: "In progress", due: "Today" },
+  { id: "WO-080", vehicle: "2021 Nissan Navara", owner: "Amina Wanjiku", phone: "0733456789", plate: "KCB 882D", service: "Oil change + filter", tech: "Fatuma K.", cost: 3200, status: "Complete", due: "Today" },
+  { id: "WO-079", vehicle: "2017 Subaru Outback", owner: "Peter Mwangi", phone: "0711321654", plate: "KCC 230F", service: "Engine diagnostics", tech: "David O.", cost: 15000, status: "Waiting parts", due: "Tomorrow" },
+  { id: "WO-078", vehicle: "2020 Honda CR-V", owner: "Grace Njeri", phone: "0700987123", plate: "KCD 017G", service: "AC recharge", tech: "Carlos R.", cost: 5800, status: "Scheduled", due: "Thu 27 Jun" },
+  { id: "WO-077", vehicle: "2015 Ford Ranger", owner: "Samuel Kamau", phone: "0722654321", plate: "KCE 559H", service: "Transmission service", tech: "Fatuma K.", cost: 22000, status: "In progress", due: "Fri 28 Jun" },
+  { id: "WO-076", vehicle: "2022 VW Polo", owner: "Lucy Achieng", phone: "0733111222", plate: "KCF 112J", service: "Tyre rotation + alignment", tech: "Moses N.", cost: 4500, status: "In progress", due: "Today" },
+];
+
+export const seedCustomers = [
+  { id: "C-1", name: "James Odhiambo", email: "james@email.com", phone: "0722001234", vehicles: 2, visits: 12, spend: 88400, last: "Today" },
+  { id: "C-2", name: "Amina Wanjiku", email: "amina@email.com", phone: "0733456789", vehicles: 1, visits: 9, spend: 52100, last: "Today" },
+  { id: "C-3", name: "Peter Mwangi", email: "peter@email.com", phone: "0711321654", vehicles: 1, visits: 7, spend: 41500, last: "Today" },
+  { id: "C-4", name: "Grace Njeri", email: "grace@email.com", phone: "0700987123", vehicles: 1, visits: 6, spend: 34200, last: "Yesterday" },
+  { id: "C-5", name: "Samuel Kamau", email: "samuel@email.com", phone: "0722654321", vehicles: 2, visits: 5, spend: 29800, last: "Today" },
+  { id: "C-6", name: "Lucy Achieng", email: "lucy@email.com", phone: "0733111222", vehicles: 1, visits: 4, spend: 18600, last: "Today" },
+];
+
+export const seedInvoices = [
+  { id: "INV-1042", customer: "Grace Njeri", service: "AC recharge", date: "25 Jun", amount: 5800, status: "Sent" },
+  { id: "INV-1041", customer: "Amina Wanjiku", service: "Oil change", date: "25 Jun", amount: 3200, status: "Paid" },
+  { id: "INV-1040", customer: "James Odhiambo", service: "Full service", date: "24 Jun", amount: 12400, status: "Paid" },
+  { id: "INV-1039", customer: "Samuel Kamau", service: "Transmission", date: "22 Jun", amount: 22000, status: "Overdue" },
+  { id: "INV-1038", customer: "Peter Mwangi", service: "Diagnostics", date: "20 Jun", amount: 15000, status: "Sent" },
+];
+
+export const seedInventory = [
+  { sku: "BRK-001", name: "Brake pad set (front)", category: "Brakes", stock: 8, min: 5, cost: 1800 },
+  { sku: "OIL-002", name: "Engine oil 5W-30 (4L)", category: "Lubricants", stock: 2, min: 10, cost: 1200 },
+  { sku: "FLT-003", name: "Air filter (universal)", category: "Filters", stock: 12, min: 6, cost: 650 },
+  { sku: "SPK-004", name: "Spark plug NGK (×4)", category: "Ignition", stock: 4, min: 8, cost: 420 },
+  { sku: "BRK-009", name: "Brake caliper (rear)", category: "Brakes", stock: 0, min: 2, cost: 4500 },
+  { sku: "ENG-012", name: "Timing belt kit", category: "Engine", stock: 3, min: 2, cost: 3200 },
+  { sku: "ACC-007", name: "Wiper blades (pair)", category: "Accessories", stock: 18, min: 5, cost: 380 },
+  { sku: "COL-005", name: "Coolant (5L)", category: "Lubricants", stock: 6, min: 4, cost: 920 },
+];
+
+export const seedRevenue = [
+  { month: "Jan", revenue: 124000 },
+  { month: "Feb", revenue: 141000 },
+  { month: "Mar", revenue: 112000 },
+  { month: "Apr", revenue: 163000 },
+  { month: "May", revenue: 158000 },
+  { month: "Jun", revenue: 184200 },
+];
+
+export function freshData() {
+  return {
+    workOrders: seedWorkOrders,
+    customers: seedCustomers,
+    invoices: seedInvoices,
+    inventory: seedInventory,
+    revenue: seedRevenue,
+  };
+}
