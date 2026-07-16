@@ -36,19 +36,19 @@ export default function BookingPage() {
   return (
     <div className="min-h-screen bg-[#f5f2f0] flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-[#faf7f5] border-b border-[#e8d9d6] px-4 sm:px-6 py-4 flex items-center gap-3">
+      <header className="sticky top-0 z-10 bg-[#0F1B2E]/90 backdrop-blur border-b border-white/10 px-4 sm:px-6 py-4 flex items-center gap-3 text-white">
         <Link to="/">
           <button
             type="button"
             aria-label="Go back"
-            className="hover:text-[#5c1717] transition-colors"
+            className="text-white hover:text-[#C81E2C] transition-colors"
           >
             <ArrowLeft size={22} strokeWidth={2.5} />
           </button>
         </Link>
         <Link to="/">
-          <h1 className="font-bold text-lg sm:text-xl tracking-tight">
-            Slipways Auto
+          <h1 className="font-bold text-lg sm:text-xl tracking-tight text-white">
+            Slipways <span className="text-[#E4222A]">Auto</span>
           </h1>
         </Link>
       </header>
