@@ -78,20 +78,20 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen w-full bg-white font-sans text-[#0F1B2E]">
       {/* Hero */}
-      <section className="bg-[#0F1B2E] px-4 py-16 sm:px-6 lg:px-10 lg:py-24 text-center">
+      <section className="bg-[#0F1B2E] px-4 py-10 sm:px-6 lg:px-10 lg:py-14 text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#C81E2C]">
           Est. 2005
         </p>
-        <h1 className="mx-auto mt-3 max-w-2xl text-3xl font-extrabold leading-tight text-white sm:text-5xl">
+        <h1 className="mx-auto mt-2 max-w-2xl text-3xl font-extrabold leading-tight text-white sm:text-5xl">
           Built on Trust, <span className="text-[#C81E2C]">Driven</span> by
           Precision
         </h1>
-        <p className="mx-auto mt-5 max-w-xl text-sm text-slate-300 sm:text-base">
+        <p className="mx-auto mt-3 max-w-xl text-sm text-slate-300 sm:text-base">
           For nearly two decades, Slipways Auto has kept Kenya's vehicles
           running strong — one honest diagnosis and one careful repair at a
           time.
         </p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link to="/booking" className="w-full sm:w-auto">
             <PrimaryButton className="w-full sm:w-auto">
               Book a Service
@@ -142,17 +142,16 @@ export default function AboutPage() {
               A Neighborhood Garage That Grew Into a Trusted Name
             </h2>
             <p className="mt-4 text-sm text-slate-600 sm:text-base">
-              Slipways Auto has been serving vehicle owners in Kenya since
-              2005. What started as a two-bay garage is now a full-service
-              repair center, built entirely on referrals and repeat
-              customers who trust us with their daily drivers and weekend
-              rides alike.
+              Slipways Auto has been serving vehicle owners in Kenya since 2005.
+              What started as a two-bay garage is now a full-service repair
+              center, built entirely on referrals and repeat customers who trust
+              us with their daily drivers and weekend rides alike.
             </p>
             <p className="mt-4 text-sm text-slate-600 sm:text-base">
               We specialize in comprehensive automotive care — from routine
               diagnostics and maintenance to complex engine and transmission
-              repairs — all backed by certified technicians and honest,
-              upfront pricing.
+              repairs — all backed by certified technicians and honest, upfront
+              pricing.
             </p>
           </div>
         </div>
@@ -202,8 +201,7 @@ export default function AboutPage() {
             WHAT DRIVES US
           </p>
           <p className="mt-3 text-sm text-slate-300 sm:text-base">
-            Every service we perform is guided by the same three
-            commitments.
+            Every service we perform is guided by the same three commitments.
           </p>
         </div>
 
@@ -216,9 +214,7 @@ export default function AboutPage() {
               <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg bg-[#C81E2C]/15 text-[#C81E2C] sm:mx-0">
                 <v.icon size={20} />
               </div>
-              <h3 className="mt-4 text-lg font-bold text-white">
-                {v.title}
-              </h3>
+              <h3 className="mt-4 text-lg font-bold text-white">{v.title}</h3>
               <p className="mt-2 text-sm text-slate-300">{v.desc}</p>
             </div>
           ))}
@@ -249,9 +245,7 @@ export default function AboutPage() {
               />
               <div className="p-4">
                 <p className="text-sm font-bold">{m.name}</p>
-                <p className="text-xs font-semibold text-[#C81E2C]">
-                  {m.role}
-                </p>
+                <p className="text-xs font-semibold text-[#C81E2C]">{m.role}</p>
               </div>
             </div>
           ))}
@@ -265,8 +259,8 @@ export default function AboutPage() {
             Ready to Experience the Difference?
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-white/85 sm:text-base">
-            Book your vehicle in for a service today and see why Kenya
-            trusts Slipways Auto.
+            Book your vehicle in for a service today and see why Kenya trusts
+            Slipways Auto.
           </p>
           <Link to="/booking">
             <button className="mt-7 rounded-md bg-white px-7 py-3 text-sm font-semibold text-[#C81E2C] transition-colors hover:bg-white/90">
