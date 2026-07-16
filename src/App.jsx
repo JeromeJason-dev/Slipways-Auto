@@ -13,6 +13,7 @@ import Invoices from "./pages/Invoices";
 import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
 import Home from "./pages/Home";
+import About from "./pages/About";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import Booking from "./pages/Booking";
@@ -365,6 +366,7 @@ export default function App() {
           }
         />
         <Route path="/booking" element={<Booking />} />
+        <Route path="/about" element={<About />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

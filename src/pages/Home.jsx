@@ -178,7 +178,7 @@ export default function SlipwaysAutoHome() {
       </section>
 
       {/* Our Services */}
-      <section className="bg-[#0F1B2E] px-4 py-16 sm:px-6 lg:px-10">
+      <section id="services" className="bg-[#0F1B2E] px-4 py-16 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-3xl font-bold tracking-wide text-[#C81E2C]">
             OUR SERVICES
@@ -286,8 +286,7 @@ export default function SlipwaysAutoHome() {
             <ul className="space-y-2 text-xs">
               <li><Link to="/" className="hover:text-red-500">Home</Link></li>
               <li><Link to="/about" className="hover:text-red-500">About Us</Link></li>
-              <li><Link to="/" className="hover:text-red-500">Services</Link></li>
-              <li><Link to="/" className="hover:text-red-500">Contact</Link></li>
+              <li><a href="#services" className="hover:text-red-500">Services</a></li>
             </ul>
           </div>
 
