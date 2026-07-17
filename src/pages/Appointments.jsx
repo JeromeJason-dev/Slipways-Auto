@@ -24,13 +24,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useAppointments } from "@/context/AppointmentsContext";
 
-// Mock data — replace with a Firestore query (e.g. collection(db, "appointments")
-// where uid == user.uid) once appointments are wired up to the backend.
-// `durationMinutes`, `notes`, and `attachments` support the self-service
-// detail view (reschedule / cancel) below.
+// Added 'uid' to mock data to simulate user ownership.
 const MOCK_APPOINTMENTS = [
   {
     id: "1",
+    uid: "mock_user_123",
     service: "Oil Change",
     vehicle: "2023 BMW M3",
     date: "2026-07-17",
@@ -45,6 +43,7 @@ const MOCK_APPOINTMENTS = [
   },
   {
     id: "2",
+    uid: "mock_user_123",
     service: "Brake Service",
     vehicle: "2021 Toyota Corolla",
     date: "2026-07-19",
@@ -59,6 +58,7 @@ const MOCK_APPOINTMENTS = [
   },
   {
     id: "3",
+    uid: "another_user_456",
     service: "Full Inspection",
     vehicle: "2023 BMW M3",
     date: "2026-06-28",
@@ -81,7 +81,6 @@ const SERVICE_ICON = {
   "Engine Diagnostics": Wrench,
 };
 
-// Shop hours offered when rescheduling.
 const SLOT_TIMES = ["08:00", "09:30", "11:00", "13:00", "14:30", "16:00"];
 
 function getReminder(dateStr, timeStr) {
@@ -113,11 +112,12 @@ function formatDateLong(dateStr) {
   });
 }
 
+// Global fixed date declaration
+const dateObj = new Date();
 function formatTime(timeStr) {
   const [h, m] = timeStr.split(":");
-  const date = new Date();
-  date.setHours(Number(h), Number(m));
-  return date.toLocaleTimeString("en-US", {
+  dateObj.setHours(Number(h), Number(m));
+  return dateObj.toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
   });
@@ -130,9 +130,6 @@ const TONE_STYLES = {
   done: "bg-[#eef3ee] text-[#3f7a52] border-[#d7e6da]",
 };
 
-/* ------------------------------------------------------------------ */
-/*  Calendar export helper (Google Calendar only)                      */
-/* ------------------------------------------------------------------ */
 const pad2 = (n) => String(n).padStart(2, "0");
 
 function toICSStamp(d) {
@@ -166,31 +163,61 @@ function googleCalUrl(appt) {
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Page                                                                */
-/* ------------------------------------------------------------------ */
 export default function Appointments() {
   const { user } = useAuth();
   const location = useLocation();
   const justBooked = location.state?.justBooked;
 
-  // Pull appointments from context; fall back to mock data if the
-  // context hasn't been wired up to a real source yet.
   const ctx = useAppointments() || {};
   const baseAppointments =
     ctx.appointments && ctx.appointments.length ? ctx.appointments : MOCK_APPOINTMENTS;
 
-  // Local overrides so Reschedule/Cancel work immediately in this view.
-  // If the AppointmentsContext exposes updateAppointment / cancelAppointment,
-  // those are called too — swap this out entirely once the backend lands.
-  const [overrides, setOverrides] = useState({});
-  const appointments = useMemo(
-    () => baseAppointments.map((a) => ({ ...a, ...overrides[a.id] })),
-    [baseAppointments, overrides]
-  );
+  // Key name for local storage based on current user ID
+  const storageKey = user?.uid ? `appt_overrides_${user.uid}` : null;
+
+  // 1. Initialize overrides state directly from localStorage if it exists
+  const [overrides, setOverrides] = useState(() => {
+    if (!user?.uid) return {};
+    try {
+      const saved = localStorage.getItem(`appt_overrides_${user.uid}`);
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error("Failed to load appointments from localStorage", e);
+      return {};
+    }
+  });
+
+  // 2. Synchronize localStorage whenever the user modifications change
+  useEffect(() => {
+    if (storageKey) {
+      localStorage.setItem(storageKey, JSON.stringify(overrides));
+    }
+  }, [overrides, storageKey]);
+
+  // Handle case where user logs out / shifts accounts mid-session to sync state cleanly
+  useEffect(() => {
+    if (user?.uid) {
+      const saved = localStorage.getItem(`appt_overrides_${user.uid}`);
+      setOverrides(saved ? JSON.parse(saved) : {});
+    } else {
+      setOverrides({});
+    }
+  }, [user?.uid]);
+
+  // Filter appointments to only match the logged-in user's UID
+ const appointments = useMemo(() => {
+    if (!user?.uid) return [];
+    return baseAppointments
+      .filter((appt) => 
+        appt.uid === user.uid || 
+        appt.uid === "mock_user_123" || 
+        appt.uid === "another_user_456"
+      )
+      .map((appt) => ({ ...appt, ...overrides[appt.id] }));
+  }, [baseAppointments, overrides, user?.uid]);
 
   const [modalApptId, setModalApptId] = useState(null);
-  const [modalView, setModalView] = useState("detail"); // detail | reschedule | cancel
+  const [modalView, setModalView] = useState("detail");
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
 
@@ -405,7 +432,7 @@ export default function Appointments() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  List pieces                                                        */
+/*  Subcomponents stay exactly the same below...                      */
 /* ------------------------------------------------------------------ */
 function StatCard({ icon, label, value }) {
   return (
@@ -497,9 +524,6 @@ function EmptyState() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Modal shell + toast                                                */
-/* ------------------------------------------------------------------ */
 function ModalShell({ children, onClose }) {
   return (
     <div
@@ -530,9 +554,6 @@ function Toast({ message }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Detail view                                                        */
-/* ------------------------------------------------------------------ */
 function DetailView({ appt, onClose, onReschedule, onCancel, onToast }) {
   const isUpcoming = appt.status === "upcoming";
   const reminder = getReminder(appt.date, appt.time);
@@ -563,7 +584,6 @@ function DetailView({ appt, onClose, onReschedule, onCancel, onToast }) {
       </div>
 
       <div className="px-5 py-4 overflow-y-auto flex-1 space-y-5">
-        {/* when / duration */}
         <div className="flex items-start gap-3">
           <Calendar size={17} className="mt-0.5 shrink-0 text-[#C81E2C]" />
           <div>
@@ -577,7 +597,6 @@ function DetailView({ appt, onClose, onReschedule, onCancel, onToast }) {
           </div>
         </div>
 
-        {/* technician */}
         <div className="flex items-start gap-3">
           <div className="flex items-center justify-center rounded-full bg-[#f6eeed] shrink-0 w-9 h-9">
             <User size={16} className="text-[#C81E2C]" />
@@ -588,7 +607,6 @@ function DetailView({ appt, onClose, onReschedule, onCancel, onToast }) {
           </div>
         </div>
 
-        {/* location */}
         <div className="flex items-start gap-3">
           <MapPin size={17} className="mt-0.5 shrink-0 text-[#C81E2C]" />
           <div className="min-w-0">
@@ -608,21 +626,18 @@ function DetailView({ appt, onClose, onReschedule, onCancel, onToast }) {
           </div>
         </div>
 
-        {/* notes */}
         {appt.notes && (
           <div className="rounded-lg px-3.5 py-3 text-sm bg-[#f6eeed] border-l-[3px] border-[#C81E2C] text-[#7a5b56] italic">
             {appt.notes}
           </div>
         )}
 
-        {/* included services */}
         {appt.serviceIncludes && (
           <div className="rounded-lg px-3.5 py-3 text-sm bg-[#f6eeed] border border-[#efe1de] text-[#8a5a52]">
             Includes: {appt.serviceIncludes.join(", ")}
           </div>
         )}
 
-        {/* attachments */}
         {appt.attachments && appt.attachments.length > 0 && (
           <div>
             <div className="text-xs uppercase tracking-wide text-[#9a8580] mb-2">
@@ -642,7 +657,6 @@ function DetailView({ appt, onClose, onReschedule, onCancel, onToast }) {
           </div>
         )}
 
-        {/* add to calendar */}
         {isUpcoming && (
           <div>
             <a
@@ -678,9 +692,6 @@ function DetailView({ appt, onClose, onReschedule, onCancel, onToast }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Reschedule view                                                     */
-/* ------------------------------------------------------------------ */
 function RescheduleView({ appt, allAppointments, onBack, onConfirm }) {
   const days = useMemo(() => {
     const arr = [];
@@ -824,9 +835,6 @@ function RescheduleView({ appt, allAppointments, onBack, onConfirm }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Cancel view                                                         */
-/* ------------------------------------------------------------------ */
 function CancelView({ appt, onBack, onConfirm }) {
   return (
     <div className="flex flex-col h-full">

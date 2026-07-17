@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ArrowLeft,
   ChevronDown,
@@ -12,10 +12,10 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppointments } from "@/context/AppointmentsContext";
+import { useAuth } from "@/context/AuthContext";
 
 const REQUIRED_FIELDS = ["name", "phone", "email", "vehicle", "service", "date", "time"];
 
-// Individual, single-purpose services.
 const SERVICES = [
   { value: "oil-change", label: "Oil Change", durationMinutes: 30 },
   { value: "brake-service", label: "Brake Service", durationMinutes: 90 },
@@ -24,8 +24,6 @@ const SERVICES = [
   { value: "engine-diagnostics", label: "Engine Diagnostics", durationMinutes: 60 },
 ];
 
-// Predefined bundles — combos of the services above, sold as one line item
-// with a single duration. Add new bundles here as the shop's offerings grow.
 const BUNDLES = [
   {
     value: "basic-package",
@@ -47,7 +45,6 @@ const BUNDLES = [
   },
 ];
 
-// Flat lookup used at submit time to build the appointment record.
 const SERVICE_LOOKUP = [...SERVICES, ...BUNDLES].reduce((acc, item) => {
   acc[item.value] = item;
   return acc;
@@ -55,7 +52,9 @@ const SERVICE_LOOKUP = [...SERVICES, ...BUNDLES].reduce((acc, item) => {
 
 export default function BookingPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { addAppointment } = useAppointments();
+  
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -66,6 +65,15 @@ export default function BookingPage() {
     time: "",
   });
   const [error, setError] = useState("");
+
+  // Sync form with user context whenever the logged-in user changes
+  useEffect(() => {
+    setForm((f) => ({
+      ...f,
+      name: user?.name || "",
+      email: user?.email || "",
+    }));
+  }, [user]);
 
   const update = (key) => (e) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -79,15 +87,12 @@ export default function BookingPage() {
     }
     setError("");
 
-
     const selected = SERVICE_LOOKUP[form.service];
+    const userKey = user?.uid || "anonymous";
 
-    // Build the appointment object from the submitted form so it can be
-    // handed off to the Appointments page. Once a backend is wired up,
-    // this is where you'd instead await a create-appointment API call
-    // and use the returned record.
     const newAppointment = {
       id: `local-${Date.now()}`,
+      uid: userKey, 
       service: selected?.label || form.service,
       serviceIncludes: selected?.includes || null,
       durationMinutes: selected?.durationMinutes || 30,
@@ -102,8 +107,15 @@ export default function BookingPage() {
       contactEmail: form.email,
     };
     
-     addAppointment(newAppointment);
-    navigate("/appointments", { state: { newAppointment } });
+    // 1. Save to Context
+    addAppointment(newAppointment);
+    
+    // 2. Save directly to User-Specific LocalStorage array
+    const storageKey = `appointments_${userKey}`;
+    const existingAppointments = JSON.parse(localStorage.getItem(storageKey)) || [];
+    localStorage.setItem(storageKey, JSON.stringify([...existingAppointments, newAppointment]));
+    
+    navigate("/appointments", { state: { justBooked: true } });
   };
 
   const selectedService = SERVICE_LOOKUP[form.service];
@@ -131,10 +143,10 @@ export default function BookingPage() {
       <main className="flex-1 w-full max-w-md sm:max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Hero */}
         <div className="mb-6">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1c1c1c] leading-tight mb-2 px-20">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1c1c1c] leading-tight mb-2">
             Schedule Your Service
           </h2>
-          <p className="text-[#8a5a52] text-sm sm:text-base px-5">
+          <p className="text-[#8a5a52] text-sm sm:text-base">
             Fill out the form below and our team will confirm your slot within
             24 hours.
           </p>
@@ -230,7 +242,6 @@ export default function BookingPage() {
               />
             </div>
 
-            {/* Show what's included when a bundle is selected */}
             {selectedService?.includes && (
               <div className="mt-2 text-xs text-[#8a5a52] bg-[#f6eeed] border border-[#efe1de] rounded-lg px-3 py-2">
                 Includes: {selectedService.includes.join(", ")}
@@ -361,35 +372,5 @@ function TrustItem({ icon, title, desc }) {
         <p className="text-[#a8a3a8] text-xs mt-0.5">{desc}</p>
       </div>
     </div>
-  );
-}
-
-function NavItem({ icon, label, active }) {
-  return (
-    <button
-      type="button"
-      className={`flex flex-col items-center gap-1 px-4 py-1 rounded-lg ${
-        active ? "text-[#7a1f1f] bg-[#f6eeed]" : "text-[#a8a3a8]"
-      }`}
-    >
-      {icon}
-      <span className="text-[10px] font-medium">{label}</span>
-    </button>
-  );
-}
-
-function UserIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
   );
 }
