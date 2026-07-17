@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Bell, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAppointments } from "../context/AppointmentsContext";
+import { useAuth } from "../context/AuthContext";
 
 const statusStyles = {
   "In progress": "bg-amber-50 text-amber-700",
@@ -73,9 +74,15 @@ function StatusPill({ status }) {
 
 
 export default function AppointmentsPage() {
-  const { appointments, BASE_DATE } = useAppointments();
+  const { appointments, BASE_DATE, approveAppointment, declineAppointment } = useAppointments();
+  const { isAdmin } = useAuth();
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedIso, setSelectedIso] = useState(BASE_DATE);
+
+  const pendingAppointments = useMemo(
+    () => appointments.filter((a) => a.status === "pending"),
+    [appointments]
+  );
 
   const week = useMemo(() => buildWeek(BASE_DATE, weekOffset), [BASE_DATE, weekOffset]);
 
@@ -114,6 +121,50 @@ export default function AppointmentsPage() {
             </button>
           </div>
         </div>
+
+        {isAdmin && pendingAppointments.length > 0 && (
+  <div className="mb-5 overflow-hidden rounded-2xl border border-amber-200 bg-amber-50/60">
+    <div className="flex items-center justify-between border-b border-amber-200 px-5.5 py-4">
+      <h2 className="text-base font-bold text-amber-800">Pending approvals</h2>
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-[13px] font-semibold text-amber-800">
+        {pendingAppointments.length} awaiting review
+      </span>
+    </div>
+    <div>
+      {pendingAppointments.map((a, i) => (
+        <div
+          key={a.id}
+          className={`flex flex-col gap-3 px-5.5 py-4 sm:flex-row sm:items-center sm:justify-between ${
+            i < pendingAppointments.length - 1 ? "border-b border-amber-200/70" : ""
+          }`}
+        >
+          <div>
+            <div className="text-[15px] font-bold text-slate-900">
+              {a.service} — {a.vehicle}
+            </div>
+            <div className="mt-0.5 text-[13.5px] text-slate-500">
+              {a.contactName} · {a.date} at {a.time}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => approveAppointment(a.id)}
+              className="rounded-lg bg-emerald-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700"
+            >
+              Approve
+            </button>
+            <button
+              onClick={() => declineAppointment(a.id)}
+              className="rounded-lg border border-red-200 px-3.5 py-2 text-[13px] font-semibold text-red-700 hover:bg-red-50"
+            >
+              Decline
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
         {/* Main grid */}
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">

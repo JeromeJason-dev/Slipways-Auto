@@ -83,7 +83,11 @@ const SERVICE_ICON = {
 
 const SLOT_TIMES = ["08:00", "09:30", "11:00", "13:00", "14:30", "16:00"];
 
-function getReminder(dateStr, timeStr) {
+function getReminder(dateStr, timeStr, status) {
+  if (status === "pending") return { label: "Pending approval", tone: "pending" };
+  if (status === "declined") return { label: "Declined", tone: "urgent" };
+  if (status === "cancelled") return { label: "Cancelled", tone: "urgent" };
+
   const target = new Date(`${dateStr}T${timeStr}`);
   const now = new Date();
   const diffMs = target - now;
@@ -128,6 +132,7 @@ const TONE_STYLES = {
   soon: "bg-[#e6c9c5]/40 text-[#7a1f1f] border-[#e6c9c5]",
   later: "bg-[#f6eeed] text-[#8a5a52] border-[#efe1de]",
   done: "bg-[#eef3ee] text-[#3f7a52] border-[#d7e6da]",
+  pending: "bg-[#fff4e0] text-[#9a6a00] border-[#f5dfa8]",
 };
 
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -166,55 +171,18 @@ function googleCalUrl(appt) {
 export default function Appointments() {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const justBooked = location.state?.justBooked;
 
   const ctx = useAppointments() || {};
-  const baseAppointments =
-    ctx.appointments && ctx.appointments.length ? ctx.appointments : MOCK_APPOINTMENTS;
 
-  // Key name for local storage based on current user ID
-  const storageKey = user?.uid ? `appt_overrides_${user.uid}` : null;
-
-  // 1. Initialize overrides state directly from localStorage if it exists
-  const [overrides, setOverrides] = useState(() => {
-    if (!user?.uid) return {};
-    try {
-      const saved = localStorage.getItem(`appt_overrides_${user.uid}`);
-      return saved ? JSON.parse(saved) : {};
-    } catch (e) {
-      console.error("Failed to load appointments from localStorage", e);
-      return {};
-    }
-  });
-
-  // 2. Synchronize localStorage whenever the user modifications change
-  useEffect(() => {
-    if (storageKey) {
-      localStorage.setItem(storageKey, JSON.stringify(overrides));
-    }
-  }, [overrides, storageKey]);
-
-  // Handle case where user logs out / shifts accounts mid-session to sync state cleanly
-  useEffect(() => {
-    if (user?.uid) {
-      const saved = localStorage.getItem(`appt_overrides_${user.uid}`);
-      setOverrides(saved ? JSON.parse(saved) : {});
-    } else {
-      setOverrides({});
-    }
-  }, [user?.uid]);
-
-  // Filter appointments to only match the logged-in user's UID
- const appointments = useMemo(() => {
-    if (!user?.uid) return [];
-    return baseAppointments
-      .filter((appt) => 
-        appt.uid === user.uid || 
-        appt.uid === "mock_user_123" || 
-        appt.uid === "another_user_456"
-      )
-      .map((appt) => ({ ...appt, ...overrides[appt.id] }));
-  }, [baseAppointments, overrides, user?.uid]);
+  // ctx.appointments is already scoped to this user by AppointmentsContext
+  // (admins get everyone's; regular users get only their own). Fall back to
+  // demo data only when there's genuinely nothing in the shared store yet.
+  const appointments =
+    ctx.appointments && ctx.appointments.length
+      ? ctx.appointments
+      : MOCK_APPOINTMENTS.filter((a) => a.uid === (user?.uid || "mock_user_123") || true);
 
   const [modalApptId, setModalApptId] = useState(null);
   const [modalView, setModalView] = useState("detail");
@@ -228,16 +196,19 @@ export default function Appointments() {
   };
 
   useEffect(() => {
-    if (justBooked) showToast("Booking confirmed");
+    if (justBooked) showToast("Booking request sent — awaiting admin approval");
   }, [justBooked]);
 
-  const { upcoming, past, nextAppointment } = useMemo(() => {
+  const { pending, upcoming, past, nextAppointment } = useMemo(() => {
     const sorted = [...appointments].sort(
       (a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`)
     );
     return {
+      pending: sorted.filter((a) => a.status === "pending"),
       upcoming: sorted.filter((a) => a.status === "upcoming"),
-      past: sorted.filter((a) => a.status !== "upcoming"),
+      past: sorted.filter(
+        (a) => a.status !== "upcoming" && a.status !== "pending"
+      ),
       nextAppointment: sorted.find((a) => a.status === "upcoming") || null,
     };
   }, [appointments]);
@@ -257,7 +228,6 @@ export default function Appointments() {
     if (typeof ctx.updateAppointment === "function") {
       ctx.updateAppointment(id, { date: newDate, time: newTime });
     }
-    setOverrides((o) => ({ ...o, [id]: { ...o[id], date: newDate, time: newTime } }));
     setModalView("detail");
     showToast("Appointment rescheduled");
   };
@@ -266,7 +236,6 @@ export default function Appointments() {
     if (typeof ctx.cancelAppointment === "function") {
       ctx.cancelAppointment(id);
     }
-    setOverrides((o) => ({ ...o, [id]: { ...o[id], status: "cancelled" } }));
     closeModal();
     showToast("Appointment cancelled");
   };
@@ -319,10 +288,12 @@ export default function Appointments() {
             </div>
             <span
               className={`text-xs font-semibold px-3 py-1.5 rounded-full border whitespace-nowrap ${
-                TONE_STYLES[getReminder(nextAppointment.date, nextAppointment.time).tone]
+                TONE_STYLES[
+                  getReminder(nextAppointment.date, nextAppointment.time, nextAppointment.status).tone
+                ]
               }`}
             >
-              {getReminder(nextAppointment.date, nextAppointment.time).label}
+              {getReminder(nextAppointment.date, nextAppointment.time, nextAppointment.status).label}
             </span>
           </div>
         )}
@@ -340,6 +311,20 @@ export default function Appointments() {
             value={past.filter((a) => a.status === "completed").length}
           />
         </div>
+
+        {/* Pending approval */}
+        {pending.length > 0 && (
+          <section className="mb-8">
+            <h3 className="text-lg font-bold text-[#1c1c1c] mb-3 px-1">
+              Pending Approval
+            </h3>
+            <div className="space-y-3">
+              {pending.map((appt) => (
+                <AppointmentCard key={appt.id} appt={appt} onOpen={openAppt} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Upcoming appointments */}
         <section className="mb-8">
@@ -432,7 +417,7 @@ export default function Appointments() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Subcomponents stay exactly the same below...                      */
+/*  Subcomponents                                                      */
 /* ------------------------------------------------------------------ */
 function StatCard({ icon, label, value }) {
   return (
@@ -449,15 +434,15 @@ function StatCard({ icon, label, value }) {
 }
 
 function AppointmentCard({ appt, onOpen }) {
-  const reminder = getReminder(appt.date, appt.time);
+  const reminder = getReminder(appt.date, appt.time, appt.status);
   const Icon = appt.serviceIncludes ? Package : SERVICE_ICON[appt.service] || Wrench;
-  const cancelled = appt.status === "cancelled";
+  const inactive = appt.status === "cancelled" || appt.status === "declined";
 
   return (
     <button
       onClick={() => onOpen(appt.id)}
       className={`w-full text-left bg-white rounded-2xl border border-[#efe1de] shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-opacity ${
-        cancelled ? "opacity-60" : "hover:border-[#e6c9c5]"
+        inactive ? "opacity-60" : "hover:border-[#e6c9c5]"
       }`}
     >
       <div className="bg-[#f6eeed] rounded-xl p-3 flex-shrink-0 w-fit">
@@ -471,10 +456,10 @@ function AppointmentCard({ appt, onOpen }) {
           </p>
           <span
             className={`text-xs font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap ${
-              cancelled ? TONE_STYLES.urgent : TONE_STYLES[reminder.tone]
+              TONE_STYLES[reminder.tone]
             }`}
           >
-            {cancelled ? "Cancelled" : reminder.label}
+            {reminder.label}
           </span>
         </div>
 
@@ -556,18 +541,17 @@ function Toast({ message }) {
 
 function DetailView({ appt, onClose, onReschedule, onCancel, onToast }) {
   const isUpcoming = appt.status === "upcoming";
-  const reminder = getReminder(appt.date, appt.time);
+  const isPending = appt.status === "pending";
+  const reminder = getReminder(appt.date, appt.time, appt.status);
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-[#efe1de]">
         <div>
           <span
-            className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full border mb-1.5 ${
-              appt.status === "cancelled" ? TONE_STYLES.urgent : TONE_STYLES[reminder.tone]
-            }`}
+            className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full border mb-1.5 ${TONE_STYLES[reminder.tone]}`}
           >
-            {appt.status === "cancelled" ? "Cancelled" : reminder.label}
+            {reminder.label}
           </span>
           <div className="text-xl font-extrabold text-[#1c1c1c] leading-tight">
             {appt.service}
@@ -584,6 +568,12 @@ function DetailView({ appt, onClose, onReschedule, onCancel, onToast }) {
       </div>
 
       <div className="px-5 py-4 overflow-y-auto flex-1 space-y-5">
+        {isPending && (
+          <div className="rounded-lg px-3.5 py-3 text-sm bg-[#fff4e0] border border-[#f5dfa8] text-[#9a6a00]">
+            Waiting on admin approval — you'll be notified once this booking is confirmed.
+          </div>
+        )}
+
         <div className="flex items-start gap-3">
           <Calendar size={17} className="mt-0.5 shrink-0 text-[#C81E2C]" />
           <div>
@@ -671,6 +661,17 @@ function DetailView({ appt, onClose, onReschedule, onCancel, onToast }) {
           </div>
         )}
       </div>
+
+      {isPending && (
+        <div className="px-5 py-4 border-t border-[#efe1de]">
+          <button
+            onClick={onCancel}
+            className="w-full rounded-xl py-2.5 text-sm font-semibold border border-[#7a1f1f] text-[#7a1f1f]"
+          >
+            Withdraw request
+          </button>
+        </div>
+      )}
 
       {isUpcoming && (
         <div className="px-5 py-4 border-t border-[#efe1de] flex gap-2">
@@ -836,6 +837,7 @@ function RescheduleView({ appt, allAppointments, onBack, onConfirm }) {
 }
 
 function CancelView({ appt, onBack, onConfirm }) {
+  const isPending = appt.status === "pending";
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-[#efe1de]">
@@ -846,7 +848,9 @@ function CancelView({ appt, onBack, onConfirm }) {
         >
           <ArrowLeft size={18} className="text-[#1c1c1c]" />
         </button>
-        <div className="text-lg font-bold text-[#1c1c1c]">Cancel booking</div>
+        <div className="text-lg font-bold text-[#1c1c1c]">
+          {isPending ? "Withdraw request" : "Cancel booking"}
+        </div>
       </div>
 
       <div className="px-5 py-5 flex-1">
@@ -854,18 +858,22 @@ function CancelView({ appt, onBack, onConfirm }) {
           <Ban size={22} className="text-[#C81E2C]" />
         </div>
         <p className="text-center text-lg font-extrabold text-[#1c1c1c] mb-1">
-          Cancel {appt.service}?
+          {isPending ? `Withdraw request for ${appt.service}?` : `Cancel ${appt.service}?`}
         </p>
         <p className="text-center text-sm text-[#8a5a52] mb-5">
-          This will free your slot and notify {appt.technician}.
+          {isPending
+            ? "This request hasn't been approved yet — withdrawing it removes it from the queue."
+            : `This will free your slot and notify ${appt.technician}.`}
         </p>
 
-        <div className="rounded-xl px-4 py-3.5 text-sm bg-[#f6eeed] border border-[#efe1de] text-[#8a5a52]">
-          <div className="font-semibold mb-1 text-[#1c1c1c]">Cancellation policy</div>
-          Cancellations made 24 hours or more before your appointment receive a
-          full refund of any amount paid. Cancellations within 24 hours are
-          refunded at 50%. Missed appointments are non-refundable.
-        </div>
+        {!isPending && (
+          <div className="rounded-xl px-4 py-3.5 text-sm bg-[#f6eeed] border border-[#efe1de] text-[#8a5a52]">
+            <div className="font-semibold mb-1 text-[#1c1c1c]">Cancellation policy</div>
+            Cancellations made 24 hours or more before your appointment receive a
+            full refund of any amount paid. Cancellations within 24 hours are
+            refunded at 50%. Missed appointments are non-refundable.
+          </div>
+        )}
       </div>
 
       <div className="px-5 py-4 border-t border-[#efe1de] flex flex-col gap-2">
@@ -873,7 +881,7 @@ function CancelView({ appt, onBack, onConfirm }) {
           onClick={onConfirm}
           className="w-full rounded-xl py-3 text-sm font-semibold bg-[#7a1f1f] hover:bg-[#661a1a] text-white"
         >
-          Cancel booking
+          {isPending ? "Withdraw request" : "Cancel booking"}
         </button>
         <button
           onClick={onBack}

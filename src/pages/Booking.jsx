@@ -54,7 +54,7 @@ export default function BookingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addAppointment } = useAppointments();
-  
+
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -92,29 +92,25 @@ export default function BookingPage() {
 
     const newAppointment = {
       id: `local-${Date.now()}`,
-      uid: userKey, 
+      uid: userKey,
       service: selected?.label || form.service,
       serviceIncludes: selected?.includes || null,
       durationMinutes: selected?.durationMinutes || 30,
       vehicle: form.vehicle,
       date: form.date,
       time: form.time,
-      status: "upcoming",
+      // status is set to "pending" by addAppointment — admin approval required
       technician: "To be assigned",
       location: "Slipways Auto — Westlands Bay",
       contactName: form.name,
       contactPhone: form.phone,
       contactEmail: form.email,
     };
-    
-    // 1. Save to Context
+
+    // AppointmentsContext persists this to the shared store, visible to
+    // both this user's dashboard and the admin dashboard.
     addAppointment(newAppointment);
-    
-    // 2. Save directly to User-Specific LocalStorage array
-    const storageKey = `appointments_${userKey}`;
-    const existingAppointments = JSON.parse(localStorage.getItem(storageKey)) || [];
-    localStorage.setItem(storageKey, JSON.stringify([...existingAppointments, newAppointment]));
-    
+
     navigate("/appointments", { state: { justBooked: true } });
   };
 

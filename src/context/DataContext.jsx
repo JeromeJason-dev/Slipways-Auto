@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 const STORAGE_KEY = "slipways-auto-data";
-const API_URL = "/data.json"; // swap for a real endpoint later, e.g. "/api/garage-data"
+const API_URL = "/data.json"; 
 
 const DataContext = createContext(null);
 
@@ -86,6 +86,49 @@ export function DataProvider({ children }) {
     }));
   };
 
+  // NEW: Add inventory item handler
+  const addInventoryItem = (item) => {
+    let success = true;
+
+    setData((d) => {
+      // Prevent duplicate SKUs
+      const skuExists = d.inventory.some(
+        (i) => i.sku.toLowerCase() === item.sku.trim().toLowerCase()
+      );
+      
+      if (skuExists) {
+        alert(`An item with SKU "${item.sku}" already exists.`);
+        success = false;
+        return d;
+      }
+
+      const newItem = {
+        sku: item.sku.trim().toUpperCase(), // standardizes SKU formats
+        name: item.name.trim(),
+        category: item.category.trim(),
+        stock: Number(item.stock) || 0,
+        min: Number(item.min) || 0,
+        cost: Number(item.cost) || 0,
+      };
+
+      return {
+        ...d,
+        inventory: [...d.inventory, newItem],
+      };
+    });
+
+    return success;
+  };
+
+const updateInventoryStock = (sku, newStock) => {
+  setData((d) => ({
+    ...d,
+    inventory: d.inventory.map((item) =>
+      item.sku === sku ? { ...item, stock: Math.max(0, Number(newStock) || 0) } : item
+    ),
+  }));
+};  
+
   const derived = useMemo(() => {
     if (!data) return null;
     return {
@@ -131,6 +174,8 @@ export function DataProvider({ children }) {
         setWorkOrderStatus,
         addWorkOrder,
         addCustomer,
+        addInventoryItem, 
+        updateInventoryStock,
         techs: meta.techs,
         statuses: meta.statuses,
       }}
