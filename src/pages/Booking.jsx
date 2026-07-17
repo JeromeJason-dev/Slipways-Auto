@@ -8,13 +8,54 @@ import {
   Shield,
   RotateCcw,
   Headphones,
-  Home,
-  Wrench,
-  Car,
+  AlertCircle,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAppointments } from "@/context/AppointmentsContext";
+
+const REQUIRED_FIELDS = ["name", "phone", "email", "vehicle", "service", "date", "time"];
+
+// Individual, single-purpose services.
+const SERVICES = [
+  { value: "oil-change", label: "Oil Change", durationMinutes: 30 },
+  { value: "brake-service", label: "Brake Service", durationMinutes: 90 },
+  { value: "tire-rotation", label: "Tire Rotation", durationMinutes: 30 },
+  { value: "full-inspection", label: "Full Inspection", durationMinutes: 45 },
+  { value: "engine-diagnostics", label: "Engine Diagnostics", durationMinutes: 60 },
+];
+
+// Predefined bundles — combos of the services above, sold as one line item
+// with a single duration. Add new bundles here as the shop's offerings grow.
+const BUNDLES = [
+  {
+    value: "basic-package",
+    label: "Basic Service Package",
+    includes: ["Oil Change", "Full Inspection"],
+    durationMinutes: 60,
+  },
+  {
+    value: "full-package",
+    label: "Full Service Package",
+    includes: ["Oil Change", "Brake Service", "Tire Rotation"],
+    durationMinutes: 135,
+  },
+  {
+    value: "safety-package",
+    label: "Safety Check Package",
+    includes: ["Brake Service", "Full Inspection", "Engine Diagnostics"],
+    durationMinutes: 150,
+  },
+];
+
+// Flat lookup used at submit time to build the appointment record.
+const SERVICE_LOOKUP = [...SERVICES, ...BUNDLES].reduce((acc, item) => {
+  acc[item.value] = item;
+  return acc;
+}, {});
 
 export default function BookingPage() {
+  const navigate = useNavigate();
+  const { addAppointment } = useAppointments();
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -24,14 +65,48 @@ export default function BookingPage() {
     date: "",
     time: "",
   });
+  const [error, setError] = useState("");
 
   const update = (key) => (e) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Booking confirmation would be wired up here
+    const missing = REQUIRED_FIELDS.some((key) => !form[key].trim());
+    if (missing) {
+      setError("Please fill in all fields before confirming your booking.");
+      return;
+    }
+    setError("");
+
+
+    const selected = SERVICE_LOOKUP[form.service];
+
+    // Build the appointment object from the submitted form so it can be
+    // handed off to the Appointments page. Once a backend is wired up,
+    // this is where you'd instead await a create-appointment API call
+    // and use the returned record.
+    const newAppointment = {
+      id: `local-${Date.now()}`,
+      service: selected?.label || form.service,
+      serviceIncludes: selected?.includes || null,
+      durationMinutes: selected?.durationMinutes || 30,
+      vehicle: form.vehicle,
+      date: form.date,
+      time: form.time,
+      status: "upcoming",
+      technician: "To be assigned",
+      location: "Slipways Auto — Westlands Bay",
+      contactName: form.name,
+      contactPhone: form.phone,
+      contactEmail: form.email,
+    };
+    
+     addAppointment(newAppointment);
+    navigate("/appointments", { state: { newAppointment } });
   };
+
+  const selectedService = SERVICE_LOOKUP[form.service];
 
   return (
     <div className="min-h-screen bg-[#f5f2f0] flex flex-col">
@@ -70,12 +145,20 @@ export default function BookingPage() {
           onSubmit={handleSubmit}
           className="bg-white rounded-2xl border border-[#efe1de] shadow-sm p-5 sm:p-7 space-y-5"
         >
+          {error && (
+            <div className="flex items-center gap-2 bg-[#fdecec] border border-[#f3c9c9] text-[#C81E2C] text-sm font-medium rounded-xl px-4 py-3">
+              <AlertCircle size={16} className="flex-shrink-0" />
+              {error}
+            </div>
+          )}
+
           <Field label="Full Name">
             <input
               type="text"
               placeholder="John Doe"
               value={form.name}
               onChange={update("name")}
+              required
               className="input-field"
             />
           </Field>
@@ -87,6 +170,7 @@ export default function BookingPage() {
                 placeholder="+254 700 000 000"
                 value={form.phone}
                 onChange={update("phone")}
+                required
                 className="input-field"
               />
             </Field>
@@ -97,6 +181,7 @@ export default function BookingPage() {
                 placeholder="john@example.com"
                 value={form.email}
                 onChange={update("email")}
+                required
                 className="input-field"
               />
             </Field>
@@ -108,6 +193,7 @@ export default function BookingPage() {
               placeholder="e.g. 2023 BMW M3"
               value={form.vehicle}
               onChange={update("vehicle")}
+              required
               className="input-field"
             />
           </Field>
@@ -117,22 +203,39 @@ export default function BookingPage() {
               <select
                 value={form.service}
                 onChange={update("service")}
+                required
                 className="input-field appearance-none pr-10 text-[#1c1c1c]"
               >
                 <option value="" disabled>
                   Select a Service
                 </option>
-                <option value="oil-change">Oil Change</option>
-                <option value="brake-service">Brake Service</option>
-                <option value="tire-rotation">Tire Rotation</option>
-                <option value="full-inspection">Full Inspection</option>
-                <option value="engine-diagnostics">Engine Diagnostics</option>
+                <optgroup label="Individual Services">
+                  {SERVICES.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label} ({s.durationMinutes} min)
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Service Packages">
+                  {BUNDLES.map((b) => (
+                    <option key={b.value} value={b.value}>
+                      {b.label} ({b.durationMinutes} min)
+                    </option>
+                  ))}
+                </optgroup>
               </select>
               <ChevronDown
                 size={18}
                 className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8a5a52]"
               />
             </div>
+
+            {/* Show what's included when a bundle is selected */}
+            {selectedService?.includes && (
+              <div className="mt-2 text-xs text-[#8a5a52] bg-[#f6eeed] border border-[#efe1de] rounded-lg px-3 py-2">
+                Includes: {selectedService.includes.join(", ")}
+              </div>
+            )}
           </Field>
 
           <div className="grid sm:grid-cols-2 gap-5">
@@ -142,6 +245,7 @@ export default function BookingPage() {
                   type="date"
                   value={form.date}
                   onChange={update("date")}
+                  required
                   className="input-field pr-10 [&::-webkit-calendar-picker-indicator]:opacity-0"
                 />
                 <Calendar
@@ -157,6 +261,7 @@ export default function BookingPage() {
                   type="time"
                   value={form.time}
                   onChange={update("time")}
+                  required
                   className="input-field pr-10 [&::-webkit-calendar-picker-indicator]:opacity-0"
                 />
                 <Clock

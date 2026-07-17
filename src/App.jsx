@@ -14,9 +14,11 @@ import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
 import Home from "./pages/Home";
 import About from "./pages/About";
+import Appointments from "./pages/Appointments";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import Booking from "./pages/Booking";
+import AppointmentsPage from "./pages/AppointmentsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { DataProvider, useData } from "./context/DataContext";
 import { validateWorkOrder, validateCustomer } from "./utils/validation";
@@ -167,6 +169,7 @@ function AdminApp() {
           <main className="flex-1 overflow-y-auto p-6">
             <Routes>
               <Route index element={<Dashboard data={data} derived={derived} />} />
+              <Route path="appointments" element={<AppointmentsPage />} />
               <Route
                 path="workorders"
                 element={
@@ -367,6 +370,7 @@ export default function App() {
         />
         <Route path="/booking" element={<Booking />} />
         <Route path="/about" element={<About />} />
+        <Route path="/appointments" element={<Appointments />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

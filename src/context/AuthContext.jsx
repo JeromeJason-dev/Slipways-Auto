@@ -1,14 +1,20 @@
-import { createContext, useContext, useReducer, useEffect, useState } from 'react';
-import { auth } from '@/config/firebase';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useState,
+} from "react";
+import { auth } from "@/config/firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
   onAuthStateChanged,
   updateProfile,
-  GoogleAuthProvider, 
-  signInWithPopup 
-} from 'firebase/auth';
+  GoogleAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
 
 const initialState = {
   user: null,
@@ -16,10 +22,10 @@ const initialState = {
 
 const authReducer = (state, action) => {
   switch (action.type) {
-    case 'LOGIN':
-    case 'REGISTER':
+    case "LOGIN":
+    case "REGISTER":
       return { ...state, user: action.payload };
-    case 'LOGOUT':
+    case "LOGOUT":
       return { ...state, user: null };
     default:
       return state;
@@ -39,11 +45,13 @@ export const AuthProvider = ({ children }) => {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           name: firebaseUser.displayName,
-          role: firebaseUser.email?.endsWith('@slipways.com') ? 'admin' : 'user',
+          role: firebaseUser.email?.endsWith("@slipways.com")
+            ? "admin"
+            : "user",
         };
-        dispatch({ type: 'LOGIN', payload: userData });
+        dispatch({ type: "LOGIN", payload: userData });
       } else {
-        dispatch({ type: 'LOGOUT' });
+        dispatch({ type: "LOGOUT" });
       }
       setLoading(false);
     });
@@ -52,8 +60,19 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const register = async (email, password, displayName) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
     await updateProfile(userCredential.user, { displayName });
+    const userData = {
+      uid: userCredential.user.uid,
+      email: userCredential.user.email,
+      name: displayName,
+      role: email?.endsWith("@slipways.com") ? "admin" : "user",
+    };
+    dispatch({ type: "REGISTER", payload: userData });
     return userCredential.user;
   };
 
@@ -69,19 +88,21 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await signOut(auth);
-    dispatch({ type: 'LOGOUT' });
+    dispatch({ type: "LOGOUT" });
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user: state.user, 
-      isAdmin: state.user?.role === 'admin', 
-      isAuthenticated: !!state.user, 
-      login, 
-      register, 
-      loginWithGoogle,
-      logout 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user: state.user,
+        isAdmin: state.user?.role === "admin",
+        isAuthenticated: !!state.user,
+        login,
+        register,
+        loginWithGoogle,
+        logout,
+      }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );
@@ -89,6 +110,7 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
+  if (context === undefined)
+    throw new Error("useAuth must be used within an AuthProvider");
   return context;
 };

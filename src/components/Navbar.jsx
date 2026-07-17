@@ -12,6 +12,12 @@ function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const location = useLocation();
 
+  // Appointments is a self-service page tied to a signed-in user's
+  // bookings, so only show the link once someone is authenticated.
+  const links = isAuthenticated
+    ? [...navLinks, { to: "/appointments", label: "Appointments" }]
+    : navLinks;
+
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b border-[#0F1B2E] bg-[#0B0E1A]/90 backdrop-blur text-white">
@@ -27,7 +33,7 @@ function Navbar() {
 
           {/* Centered nav links */}
           <div className="hidden md:flex items-center gap-8 text-sm font-medium absolute left-1/2 -translate-x-1/2">
-            {navLinks.map((link) => {
+            {links.map((link) => {
               const isActive = location.pathname === link.to;
               return (
                 <Link

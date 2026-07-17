@@ -1,12 +1,13 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { ArrowUp, ClipboardList, Users, Boxes } from "lucide-react";
 import MetricCard from "../components/MetricCard.jsx";
-import { useData } from "../context/DataContext.jsx";
 import { currency } from "../utils/format.js";
 import { STATUSES } from "../data/seedData.js";
 
-export default function Dashboard() {
-  const { data, derived } = useData();
+// Destructure data and derived from props instead of context
+export default function Dashboard({ data, derived }) {
+  // Guard clause to prevent rendering if data/derived are not fully loaded
+  if (!data || !derived) return null;
 
   return (
     <div>
@@ -24,7 +25,7 @@ export default function Dashboard() {
           tone="teal"
           label="Open work orders"
           value={derived.open.length}
-          sub={`${derived.statusCounts["In progress"]} in progress`}
+          sub={`${derived.statusCounts["In progress"] || 0} in progress`}
         />
         <MetricCard icon={Users} tone="blue" label="Customers on file" value={data.customers.length} sub="live count" />
         <MetricCard
@@ -67,11 +68,11 @@ export default function Dashboard() {
                   <div
                     className="h-full rounded-full bg-accent"
                     style={{
-                      width: `${Math.max(4, (derived.statusCounts[s] / (data.workOrders.length || 1)) * 100)}%`,
+                      width: `${Math.max(4, ((derived.statusCounts[s] || 0) / (data.workOrders.length || 1)) * 100)}%`,
                     }}
                   />
                 </div>
-                <div className="text-right font-semibold">{derived.statusCounts[s]}</div>
+                <div className="text-right font-semibold">{derived.statusCounts[s] || 0}</div>
               </div>
             ))}
           </div>

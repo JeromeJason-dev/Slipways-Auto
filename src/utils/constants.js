@@ -6,6 +6,7 @@ import {
   Package,
   BarChart3,
 } from "lucide-react";
+import { Calendar } from "lucide-react";
 
 // ---------- App-wide config ----------
 export const STORAGE_KEY = "slipways-auto-data";
@@ -17,6 +18,7 @@ export const STATUSES = ["Scheduled", "In progress", "Waiting on parts", "Comple
 // ---------- Sidebar navigation ----------
 export const NAV = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, section: "Main" },
+  { id: "appointments", label: "Appointments", icon: Calendar, section: "Main" },
   { id: "workorders", label: "Work orders", icon: Wrench, section: "Shop" },
   { id: "customers", label: "Customers", icon: Users, section: "Shop" },
   { id: "invoices", label: "Invoices", icon: FileText, section: "Shop" },

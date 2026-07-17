@@ -35,7 +35,9 @@ export function Sidebar({ derived, resetData }) {
                     ? derived.open.length
                     : n.id === "inventory"
                       ? derived.lowStock.length
-                      : null;
+                      : n.id === "appointments"
+                        ?derived.appointmentsToday?.length
+                        : null;
                 // "dashboard" lives at the index route, everything else nests under it
                 const to = n.id === "dashboard" ? "/dashboard" : `/dashboard/${n.id}`;
 
@@ -71,26 +73,6 @@ export function Sidebar({ derived, resetData }) {
           </div>
         ))}
       </nav>
-
-      <div className="border-t border-white/5 p-3">
-        <button
-          className="flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 rounded-lg w-full transition-colors group text-left"
-          onClick={resetData}
-          title="Reset demo data"
-        >
-          <div className="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center text-xs font-semibold">
-            MO
-          </div>
-          <div className="overflow-hidden">
-            <div className="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">
-              Benson Mwangi
-            </div>
-            <div className="text-[10px] text-slate-500 truncate">
-              Shop Owner · reset data
-            </div>
-          </div>
-        </button>
-      </div>
     </aside>
   );
 }
