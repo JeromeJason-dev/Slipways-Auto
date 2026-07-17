@@ -2,7 +2,12 @@ import { Bell, Plus } from "lucide-react";
 import { PAGE_META } from "../utils/constants";
 
 export function Topbar({ page, saveState, openWOModal, newWOBtnRef }) {
-  const meta = PAGE_META[page] || PAGE_META.dashboard;
+  // Checks PAGE_META first. If the specific page key doesn't exist, 
+  // it safely falls back to custom Appointments metadata instead of the dashboard.
+  const meta = PAGE_META[page] || {
+    title: "Appointments",
+    breadcrumb: "Management / Appointments"
+  };
 
   return (
     <div className="bg-white border-b border-slate-100 px-6 h-14 flex items-center justify-between flex-shrink-0 shadow-xs">

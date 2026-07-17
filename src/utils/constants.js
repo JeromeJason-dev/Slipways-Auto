@@ -29,6 +29,7 @@ export const NAV = [
 // ---------- Topbar page metadata ----------
 export const PAGE_META = {
   dashboard: { title: "Dashboard", breadcrumb: "Overview of shop activity" },
+  appointments: { title: "Appointments", breadcrumb: "Management / Appointments"},
   workorders: { title: "Work Orders", breadcrumb: "Track and manage repairs" },
   customers: { title: "Customers", breadcrumb: "Customer records" },
   invoices: { title: "Invoices", breadcrumb: "Billing and payments" },
