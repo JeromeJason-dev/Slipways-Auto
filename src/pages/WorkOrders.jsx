@@ -25,9 +25,6 @@ export default function WorkOrders({ onNew, newBtnRef }) {
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex flex-wrap gap-2">
-          <button className={btnPrimaryClass} ref={newBtnRef} onClick={onNew}>
-            <Plus size={13} /> New work order
-          </button>
           <div className="flex w-[260px] items-center gap-1.5 rounded-lg border border-black/[.14] bg-white px-2.5 py-1.5 text-ink-muted">
             <Search size={13} />
             <input
