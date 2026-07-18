@@ -6,6 +6,10 @@ const AppointmentsContext = createContext(null);
 // Single source of truth for "today"
 export const BASE_DATE = "2026-07-17";
 
+// A default technician roster. Kept here so both the admin dashboard and
+// any other consumer (e.g. a future booking form) can share the same list.
+export const TECHNICIANS = ["Mike Otieno", "Sarah Njeri", "James Kariuki", "Grace Wambui"];
+
 // One shared "table" for every booking, regardless of which user placed it.
 // This is what lets the admin dashboard see bookings the moment a user
 // submits them, instead of each user only ever seeing their own copy.
@@ -83,12 +87,32 @@ export function AppointmentsProvider({ children }) {
     [persist]
   );
 
-  // Approval / decline are admin-only actions.
+  // Approval / decline are admin-only actions. Approval now requires (and
+  // records) a technician assignment in the same atomic update, so an
+  // appointment can never end up "upcoming" without someone assigned to it.
   const approveAppointment = useCallback(
-    (id) => {
+    (id, technician) => {
+      if (!isAdmin) return;
+      if (!technician) {
+        console.warn("approveAppointment called without a technician; ignoring.");
+        return;
+      }
+      persist((prev) =>
+        prev.map((a) =>
+          a.id === id ? { ...a, status: "upcoming", technician } : a
+        )
+      );
+    },
+    [persist, isAdmin]
+  );
+
+  // Lets an admin reassign the technician on an already-approved (or any)
+  // appointment without touching its status.
+  const assignTechnician = useCallback(
+    (id, technician) => {
       if (!isAdmin) return;
       persist((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, status: "upcoming" } : a))
+        prev.map((a) => (a.id === id ? { ...a, technician } : a))
       );
     },
     [persist, isAdmin]
@@ -123,11 +147,13 @@ export function AppointmentsProvider({ children }) {
         appointments,
         allAppointments,
         pendingCount,
+        technicians: TECHNICIANS,
         addAppointment,
         updateAppointmentStatus,
         updateAppointment,
         cancelAppointment,
         approveAppointment,
+        assignTechnician,
         declineAppointment,
         BASE_DATE,
       }}

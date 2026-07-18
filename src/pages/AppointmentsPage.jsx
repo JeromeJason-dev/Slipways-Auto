@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Bell, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bell, Plus, ChevronLeft, ChevronRight, User } from "lucide-react";
 import { useAppointments } from "../context/AppointmentsContext";
 import { useAuth } from "../context/AuthContext";
 
@@ -37,6 +37,32 @@ function StatusSelect({ status, onChange }) {
       <ChevronRight
         size={12}
         className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 opacity-60"
+      />
+    </div>
+  );
+}
+
+// Compact technician dropdown used inline in "Today's schedule".
+function TechnicianSelect({ technician, technicians, onChange }) {
+  return (
+    <div className="relative inline-block w-auto shrink-0">
+      <select
+        value={technician || ""}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none cursor-pointer rounded-full pl-3 pr-6 py-1 text-[12px] font-medium outline-none bg-slate-50 text-slate-600 border border-slate-200"
+      >
+        <option value="" disabled>
+          Assign…
+        </option>
+        {technicians.map((t) => (
+          <option key={t} value={t}>
+            {t}
+          </option>
+        ))}
+      </select>
+      <ChevronRight
+        size={10}
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rotate-90 opacity-50"
       />
     </div>
   );
@@ -89,11 +115,20 @@ function StatusPill({ status }) {
 }
 
 export default function AppointmentsPage() {
-  const { appointments, BASE_DATE, approveAppointment, declineAppointment, updateAppointmentStatus } =
-    useAppointments();
+  const {
+    appointments,
+    BASE_DATE,
+    approveAppointment,
+    declineAppointment,
+    updateAppointmentStatus,
+    assignTechnician,
+    technicians,
+  } = useAppointments();
   const { isAdmin } = useAuth();
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedIso, setSelectedIso] = useState(BASE_DATE);
+  // Tracks the technician chosen in each pending row's dropdown, before approval.
+  const [pendingTech, setPendingTech] = useState({});
 
   const pendingAppointments = useMemo(
     () => appointments.filter((a) => a.status === "pending"),
@@ -116,11 +151,22 @@ export default function AppointmentsPage() {
     [appointments, selectedIso]
   );
 
+  const handleApprove = (id) => {
+    const technician = pendingTech[id];
+    if (!technician) return;
+    approveAppointment(id, technician);
+    setPendingTech((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-900 antialiased">
       {/* Dynamic shell spacing: smaller padding on mobile, generous padding on desktop */}
       <div className="px-4 py-4 md:px-8 md:py-6 max-w-7xl mx-auto">
-        
+
         {/* Date nav row */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 md:gap-3">
@@ -152,43 +198,76 @@ export default function AppointmentsPage() {
               </span>
             </div>
             <div className="divide-y divide-amber-200/70">
-              {pendingAppointments.map((a) => (
-                <div
-                  key={a.id}
-                  className="flex flex-col gap-3 p-4 md:p-5.5 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm md:text-[15px] font-bold text-slate-900 break-words">
-                      {a.service} — {a.vehicle}
+              {pendingAppointments.map((a) => {
+                const chosenTech = pendingTech[a.id] || "";
+                return (
+                  <div
+                    key={a.id}
+                    className="flex flex-col gap-3 p-4 md:p-5.5 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm md:text-[15px] font-bold text-slate-900 break-words">
+                        {a.service} — {a.vehicle}
+                      </div>
+                      <div className="mt-0.5 text-xs md:text-[13.5px] text-slate-500">
+                        {a.contactName} · {a.date} at {formatTime(a.time)}
+                      </div>
                     </div>
-                    <div className="mt-0.5 text-xs md:text-[13.5px] text-slate-500">
-                      {a.contactName} · {a.date} at {formatTime(a.time)}
+
+                    {/* Technician assignment + action buttons */}
+                    <div className="flex flex-col gap-2 sm:w-auto w-full sm:items-end">
+                      <div className="relative w-full sm:w-auto">
+                        <User
+                          size={13}
+                          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
+                        <select
+                          value={chosenTech}
+                          onChange={(e) =>
+                            setPendingTech((prev) => ({ ...prev, [a.id]: e.target.value }))
+                          }
+                          className="w-full sm:w-auto rounded-lg border border-amber-200 bg-white pl-8 pr-3 py-2 text-[13px] font-medium text-slate-700 outline-none"
+                        >
+                          <option value="">Assign technician…</option>
+                          {technicians.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2 sm:w-auto w-full">
+                        <button
+                          onClick={() => handleApprove(a.id)}
+                          disabled={!chosenTech}
+                          title={!chosenTech ? "Assign a technician before approving" : undefined}
+                          className={`flex-1 sm:flex-initial text-center justify-center rounded-lg px-3.5 py-2 text-[13px] font-semibold text-white whitespace-nowrap transition-colors ${
+                            chosenTech
+                              ? "bg-emerald-600 hover:bg-emerald-700"
+                              : "bg-emerald-300 cursor-not-allowed"
+                          }`}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => declineAppointment(a.id)}
+                          className="flex-1 sm:flex-initial text-center justify-center rounded-lg border border-red-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-red-700 transition-colors hover:bg-red-50 whitespace-nowrap"
+                        >
+                          Decline
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  {/* Buttons group is full width on tiny mobile devices */}
-                  <div className="flex items-center gap-2 sm:w-auto w-full">
-                    <button
-                      onClick={() => approveAppointment(a.id)}
-                      className="flex-1 sm:flex-initial text-center justify-center rounded-lg bg-emerald-600 px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-emerald-700 whitespace-nowrap"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => declineAppointment(a.id)}
-                      className="flex-1 sm:flex-initial text-center justify-center rounded-lg border border-red-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-red-700 transition-colors hover:bg-red-50 whitespace-nowrap"
-                    >
-                      Decline
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* Main layout grid */}
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-          
+
           {/* Left Block: Today's Schedule */}
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm order-2 lg:order-1">
             <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-4 md:px-5.5">
@@ -210,16 +289,16 @@ export default function AppointmentsPage() {
                 return (
                   <div
                     key={a.id}
-                    className="flex items-center gap-3 p-4 md:gap-4.5 md:p-5.5"
+                    className="flex items-center gap-3 p-4 md:gap-4.5 md:p-5.5 flex-wrap sm:flex-nowrap"
                   >
                     {/* Timestamp alignment */}
                     <div className="w-14 md:w-16 shrink-0 text-sm md:text-[15px] font-bold text-slate-900">
                       {formatTime(a.time)}
                     </div>
-                    
+
                     {/* Accent border pill */}
                     <div className={`w-[3px] self-stretch rounded-full shrink-0 ${display.accent}`} />
-                    
+
                     {/* Content area */}
                     <div className="flex-1 min-w-0 pr-1">
                       <div className="text-sm md:text-[15px] font-bold truncate text-slate-900">
@@ -229,21 +308,34 @@ export default function AppointmentsPage() {
                       <div className="mt-0.5 text-xs md:text-[13.5px] text-slate-500 truncate">
                         {a.contactName ? `${a.contactName} · ` : ""}
                         {a.vehicle}
-                        {a.technician ? ` · ${a.technician}` : ""}
+                        {!isAdmin && a.technician ? ` · ${a.technician}` : ""}
                       </div>
                     </div>
-                    
-                    {/* Interactive Selector or Display Tag */}
-                    <div className="shrink-0 max-w-[130px] sm:max-w-none">
-                      {isAdmin && EDITABLE_STATUSES.some((opt) => opt.value === a.status) ? (
-                        <StatusSelect
-                          status={a.status}
-                          onChange={(newStatus) => updateAppointmentStatus(a.id, newStatus)}
+
+                    {/* Admin: technician reassignment + status; others: read-only pills */}
+                    {isAdmin ? (
+                      <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end order-1 sm:order-none mt-2 sm:mt-0">
+                        <TechnicianSelect
+                          technician={a.technician}
+                          technicians={technicians}
+                          onChange={(newTech) => assignTechnician(a.id, newTech)}
                         />
-                      ) : (
+                        <div className="max-w-[130px] sm:max-w-none">
+                          {EDITABLE_STATUSES.some((opt) => opt.value === a.status) ? (
+                            <StatusSelect
+                              status={a.status}
+                              onChange={(newStatus) => updateAppointmentStatus(a.id, newStatus)}
+                            />
+                          ) : (
+                            <StatusPill status={a.status} />
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="shrink-0 max-w-[130px] sm:max-w-none">
                         <StatusPill status={a.status} />
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -254,7 +346,7 @@ export default function AppointmentsPage() {
           <div className="flex flex-col gap-5 order-1 lg:order-2">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5.5 shadow-sm">
               <h2 className="mb-3.5 text-sm md:text-base font-bold">Upcoming (next 7 days)</h2>
-              
+
               {/* Responsive Calendar Carousel Container: Scrollable horizontally on small viewports, full width grid on large */}
               <div className="overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
                 <div className="flex min-w-[420px] sm:min-w-0 sm:grid sm:grid-cols-7 justify-between gap-1">
