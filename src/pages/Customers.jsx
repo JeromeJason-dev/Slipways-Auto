@@ -1,12 +1,15 @@
-import { useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { useData } from "../context/DataContext";
-import { currency, initials } from "../utils/format";
+import { currency, initials, formatLastVisit } from "../utils/format";
 import { btnPrimaryClass } from "../utils/styles";
+import CustomerModal from "../components/CustomerModal";
 
 export default function Customers({ onNew, newBtnRef }) {
-  const { data } = useData();
+  const { data, deleteCustomer } = useData();
   const [query, setQuery] = useState("");
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const editTriggerRef = useRef(null);
 
   const rows = useMemo(
     () =>
@@ -15,6 +18,16 @@ export default function Customers({ onNew, newBtnRef }) {
       ),
     [data.customers, query]
   );
+
+  function handleEditClick(e, customer) {
+    editTriggerRef.current = e.currentTarget;
+    setEditingCustomer(customer);
+  }
+
+  function handleDeleteClick(customer) {
+    const ok = window.confirm(`Delete ${customer.name || "this customer"}? This can't be undone.`);
+    if (ok) deleteCustomer(customer.id);
+  }
 
   return (
     <div>
@@ -39,14 +52,16 @@ export default function Customers({ onNew, newBtnRef }) {
           <table className="w-full border-collapse text-[13px]">
             <thead>
               <tr>
-                {["Customer", "Phone", "Vehicles", "Total visits", "Total spend", "Last visit"].map((h) => (
-                  <th
-                    key={h}
-                    className="border-b border-black/[.08] bg-surface px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-ink-muted"
-                  >
-                    {h}
-                  </th>
-                ))}
+                {["Customer", "Phone", "Vehicles", "Total visits", "Total spend", "Last visit", "Actions"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="border-b border-black/[.08] bg-surface px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-ink-muted"
+                    >
+                      {h}
+                    </th>
+                  )
+                )}
               </tr>
             </thead>
             <tbody>
@@ -55,26 +70,46 @@ export default function Customers({ onNew, newBtnRef }) {
                   <td className="px-4 py-3">
                     <div className="flex items-center">
                       <div className="mr-2 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-navy text-[10px] font-semibold text-white">
-                        {initials(c.name)}
+                        {initials(c.name || "??")}
                       </div>
                       <div>
-                        <div className="font-medium">{c.name}</div>
-                        <div className="text-[11px] text-ink-muted">{c.email}</div>
+                        <div className="font-medium">{c.name || "Unknown Customer"}</div>
+                        <div className="text-[11px] text-ink-muted">{c.email || "No email"}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">{c.phone}</td>
-                  <td className="px-4 py-3">{c.vehicles}</td>
+                  <td className="px-4 py-3">{c.phone || "—"}</td>
+                  <td className="px-4 py-3">{c.vehicles || "—"}</td>
                   <td className="px-4 py-3">
-                    <strong>{c.visits}</strong>
+                    <strong>{c.visits || 0}</strong>
                   </td>
-                  <td className="px-4 py-3 font-medium text-green">{currency(c.spend)}</td>
-                  <td className="px-4 py-3">{c.last}</td>
+                  <td className="px-4 py-3 font-medium text-green">{currency(c.spend || 0)}</td>
+                  <td className="px-4 py-3">{formatLastVisit(c.last)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <button
+                        className="rounded-md p-1.5 text-ink-muted hover:bg-surface hover:text-ink"
+                        onClick={(e) => handleEditClick(e, c)}
+                        aria-label={`Edit ${c.name || "customer"}`}
+                        type="button"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        className="rounded-md p-1.5 text-ink-muted hover:bg-red-50 hover:text-red-600"
+                        onClick={() => handleDeleteClick(c)}
+                        aria-label={`Delete ${c.name || "customer"}`}
+                        type="button"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-7 text-center text-ink-muted">
+                  <td colSpan={7} className="px-4 py-7 text-center text-ink-muted">
                     No customers match your search.
                   </td>
                 </tr>
@@ -83,6 +118,13 @@ export default function Customers({ onNew, newBtnRef }) {
           </table>
         </div>
       </div>
+
+      <CustomerModal
+        open={!!editingCustomer}
+        onClose={() => setEditingCustomer(null)}
+        triggerRef={editTriggerRef}
+        customer={editingCustomer}
+      />
     </div>
   );
 }

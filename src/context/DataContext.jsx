@@ -23,6 +23,7 @@ export function DataProvider({ children }) {
         const seed = {
           workOrders: json.workOrders,
           customers: json.customers,
+          appointments: json.appointments || [], // Fallback if missing in original seed
           invoices: json.invoices,
           inventory: json.inventory,
           revenue: json.revenue,
@@ -33,7 +34,12 @@ export function DataProvider({ children }) {
         let initial = seed;
         try {
           const cached = localStorage.getItem(STORAGE_KEY);
-          if (cached) initial = JSON.parse(cached);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            // Ensure appointments array exists in cached schemas
+            if (!parsed.appointments) parsed.appointments = [];
+            initial = parsed;
+          }
         } catch {
           // corrupt cache — ignore, use fresh seed
         }
@@ -86,12 +92,24 @@ export function DataProvider({ children }) {
     }));
   };
 
-  // NEW: Add inventory item handler
+  const updateCustomer = (id, patch) => {
+    setData((d) => ({
+      ...d,
+      customers: d.customers.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
+  };
+
+  const deleteCustomer = (id) => {
+    setData((d) => ({
+      ...d,
+      customers: d.customers.filter((c) => c.id !== id),
+    }));
+  };
+
   const addInventoryItem = (item) => {
     let success = true;
 
     setData((d) => {
-      // Prevent duplicate SKUs
       const skuExists = d.inventory.some(
         (i) => i.sku.toLowerCase() === item.sku.trim().toLowerCase()
       );
@@ -103,7 +121,7 @@ export function DataProvider({ children }) {
       }
 
       const newItem = {
-        sku: item.sku.trim().toUpperCase(), // standardizes SKU formats
+        sku: item.sku.trim().toUpperCase(),
         name: item.name.trim(),
         category: item.category.trim(),
         stock: Number(item.stock) || 0,
@@ -120,14 +138,68 @@ export function DataProvider({ children }) {
     return success;
   };
 
-const updateInventoryStock = (sku, newStock) => {
-  setData((d) => ({
-    ...d,
-    inventory: d.inventory.map((item) =>
-      item.sku === sku ? { ...item, stock: Math.max(0, Number(newStock) || 0) } : item
-    ),
-  }));
-};  
+  const updateInventoryStock = (sku, newStock) => {
+    setData((d) => ({
+      ...d,
+      inventory: d.inventory.map((item) =>
+        item.sku === sku ? { ...item, stock: Math.max(0, Number(newStock) || 0) } : item
+      ),
+    }));
+  };
+
+  // Handler to approve appointment and seamlessly add or increment the customer record
+  const approveAppointment = (appointmentId) => {
+    setData((d) => {
+      const appointment = d.appointments?.find((app) => app.id === appointmentId);
+      if (!appointment) return d;
+
+      const updatedAppointments = d.appointments.map((app) =>
+        app.id === appointmentId ? { ...app, status: "approved" } : app
+      );
+
+      const existingCustomerIndex = d.customers.findIndex(
+        (c) => c.email === appointment.contactEmail || c.phone === appointment.contactPhone
+      );
+
+      let updatedCustomers = [...d.customers];
+
+      if (existingCustomerIndex > -1) {
+        const currentCustomer = updatedCustomers[existingCustomerIndex];
+        const currentVehicles = currentCustomer.vehicles ? String(currentCustomer.vehicles) : "";
+        
+        const vehicleList = currentVehicles.includes(appointment.vehicle)
+          ? currentVehicles
+          : currentVehicles 
+            ? `${currentVehicles}, ${appointment.vehicle}` 
+            : appointment.vehicle;
+
+        updatedCustomers[existingCustomerIndex] = {
+          ...currentCustomer,
+          vehicles: vehicleList,
+          visits: (Number(currentCustomer.visits) || 0) + 1,
+          last: appointment.date,
+        };
+      } else {
+        const newCustomer = {
+          id: `cust-${Date.now()}`,
+          name: appointment.contactName,
+          email: appointment.contactEmail,
+          phone: appointment.contactPhone,
+          vehicles: appointment.vehicle,
+          visits: 1,
+          spend: 0,
+          last: appointment.date,
+        };
+        updatedCustomers.unshift(newCustomer); // Adds to the top of the table view
+      }
+
+      return {
+        ...d,
+        appointments: updatedAppointments,
+        customers: updatedCustomers,
+      };
+    });
+  };
 
   const derived = useMemo(() => {
     if (!data) return null;
@@ -174,8 +246,11 @@ const updateInventoryStock = (sku, newStock) => {
         setWorkOrderStatus,
         addWorkOrder,
         addCustomer,
+        updateCustomer,
+        deleteCustomer,
         addInventoryItem, 
         updateInventoryStock,
+        approveAppointment,
         techs: meta.techs,
         statuses: meta.statuses,
       }}
