@@ -176,13 +176,9 @@ export default function Appointments() {
 
   const ctx = useAppointments() || {};
 
-  // ctx.appointments is already scoped to this user by AppointmentsContext
-  // (admins get everyone's; regular users get only their own). Fall back to
-  // demo data only when there's genuinely nothing in the shared store yet.
-  const appointments =
-    ctx.appointments && ctx.appointments.length
-      ? ctx.appointments
-      : MOCK_APPOINTMENTS.filter((a) => a.uid === (user?.uid || "mock_user_123") || true);
+  const appointments = ctx.appointments
+    ? ctx.appointments
+    : MOCK_APPOINTMENTS.filter((a) => a.uid === user?.uid);
 
   const [modalApptId, setModalApptId] = useState(null);
   const [modalView, setModalView] = useState("detail");
