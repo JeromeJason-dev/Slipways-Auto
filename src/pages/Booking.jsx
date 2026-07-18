@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   ArrowLeft,
   ChevronDown,
@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Headphones,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppointments } from "@/context/AppointmentsContext";
@@ -50,10 +51,25 @@ const SERVICE_LOOKUP = [...SERVICES, ...BUNDLES].reduce((acc, item) => {
   return acc;
 }, {});
 
+function hasConflict(allAppointments, dateStr, timeStr, durationMinutes) {
+  if (!dateStr || !timeStr) return false;
+
+  const start = new Date(`${dateStr}T${timeStr}`);
+  const end = new Date(start.getTime() + (durationMinutes || 30) * 60000);
+
+  return allAppointments.some((other) => {
+    if (other.status !== "upcoming") return false;
+    if (other.date !== dateStr) return false;
+    const oStart = new Date(`${other.date}T${other.time}`);
+    const oEnd = new Date(oStart.getTime() + (other.durationMinutes || 30) * 60000);
+    return start < oEnd && end > oStart;
+  });
+}
+
 export default function BookingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addAppointment } = useAppointments();
+  const { addAppointment, allAppointments } = useAppointments();
 
   const [form, setForm] = useState({
     name: "",
@@ -78,6 +94,16 @@ export default function BookingPage() {
   const update = (key) => (e) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  const selectedService = SERVICE_LOOKUP[form.service];
+  const selectedDuration = selectedService?.durationMinutes || 30;
+
+  // Live conflict check as the customer picks a service/date/time, so they
+  // find out before they even hit submit.
+  const conflict = useMemo(
+    () => hasConflict(allAppointments, form.date, form.time, selectedDuration),
+    [allAppointments, form.date, form.time, selectedDuration]
+  );
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const missing = REQUIRED_FIELDS.some((key) => !form[key].trim());
@@ -85,6 +111,14 @@ export default function BookingPage() {
       setError("Please fill in all fields before confirming your booking.");
       return;
     }
+
+    if (hasConflict(allAppointments, form.date, form.time, selectedDuration)) {
+      setError(
+        "That time slot is already booked. Please choose a different date or time."
+      );
+      return;
+    }
+
     setError("");
 
     const selected = SERVICE_LOOKUP[form.service];
@@ -113,8 +147,6 @@ export default function BookingPage() {
 
     navigate("/appointments", { state: { justBooked: true } });
   };
-
-  const selectedService = SERVICE_LOOKUP[form.service];
 
   return (
     <div className="min-h-screen bg-[#f5f2f0] flex flex-col">
@@ -279,9 +311,29 @@ export default function BookingPage() {
             </Field>
           </div>
 
+          {conflict && (
+            <div className="flex items-start gap-2 rounded-xl px-3.5 py-3 text-sm bg-[#fdecec] border border-[#f3c9c9] text-[#C81E2C]">
+              <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+              This time slot is already booked. Please choose a different
+              date or time before confirming.
+            </div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-[#C81E2C] hover:bg-[#ab1d29] active:bg-[#8f202a] transition-colors text-white font-semibold rounded-xl py-3.5 flex items-center justify-center gap-2 mt-2"
+            disabled={conflict}
+            className="w-full text-white font-semibold rounded-xl py-3.5 flex items-center justify-center gap-2 mt-2 transition-colors"
+            style={{
+              backgroundColor: conflict ? "#e6c9c5" : "#C81E2C",
+              color: conflict ? "#a8938f" : "#fff",
+              cursor: conflict ? "not-allowed" : "pointer",
+            }}
+            onMouseEnter={(e) => {
+              if (!conflict) e.currentTarget.style.backgroundColor = "#ab1d29";
+            }}
+            onMouseLeave={(e) => {
+              if (!conflict) e.currentTarget.style.backgroundColor = "#C81E2C";
+            }}
           >
             Confirm Booking
             <ArrowRight size={18} />

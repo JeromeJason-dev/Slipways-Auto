@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import emailjs from "@emailjs/browser";
 import { useAuth } from "./AuthContext";
 
 const AppointmentsContext = createContext(null);
@@ -14,6 +15,54 @@ export const TECHNICIANS = ["Mike Otieno", "Sarah Njeri", "James Kariuki", "Grac
 // This is what lets the admin dashboard see bookings the moment a user
 // submits them, instead of each user only ever seeing their own copy.
 const STORAGE_KEY = "slipways_appointments_all";
+
+const EMAILJS_SERVICE_ID =
+  import.meta.env?.VITE_EMAILJS_SERVICE_ID || "YOUR_EMAILJS_SERVICE_ID";
+const EMAILJS_APPROVAL_TEMPLATE_ID =
+  import.meta.env?.VITE_EMAILJS_APPROVAL_TEMPLATE_ID || "YOUR_EMAILJS_TEMPLATE_ID";
+const EMAILJS_PUBLIC_KEY =
+  import.meta.env?.VITE_EMAILJS_PUBLIC_KEY || "YOUR_EMAILJS_PUBLIC_KEY";
+
+function formatEmailTime(time24) {
+  if (!time24) return "";
+  const [h, m] = time24.split(":");
+  const d = new Date();
+  d.setHours(Number(h), Number(m));
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+
+async function sendApprovalEmail(appointment) {
+  const toEmail = appointment.contactEmail || appointment.email;
+
+  if (!toEmail) {
+    console.warn(
+      `Appointment ${appointment.id} has no contactEmail on file — skipping approval email. ` +
+        `Make sure your booking form saves contactEmail (e.g. the user's auth email) on new appointments.`
+    );
+    return;
+  }
+
+  try {
+    await emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_APPROVAL_TEMPLATE_ID,
+      {
+        to_email: toEmail,
+        to_name: appointment.contactName || "there",
+        service: appointment.service,
+        vehicle: appointment.vehicle,
+        appt_date: appointment.date,
+        appt_time: formatEmailTime(appointment.time),
+        technician: appointment.technician,
+        dashboard_url: `${window.location.origin}/appointments`,
+      },
+      EMAILJS_PUBLIC_KEY
+    );
+  } catch (err) {
+    console.error(`Failed to send approval email for appointment ${appointment.id}:`, err);
+  }
+}
 
 function loadAll() {
   try {
@@ -87,9 +136,7 @@ export function AppointmentsProvider({ children }) {
     [persist]
   );
 
-  // Approval / decline are admin-only actions. Approval now requires (and
-  // records) a technician assignment in the same atomic update, so an
-  // appointment can never end up "upcoming" without someone assigned to it.
+
   const approveAppointment = useCallback(
     (id, technician) => {
       if (!isAdmin) return;
@@ -97,11 +144,19 @@ export function AppointmentsProvider({ children }) {
         console.warn("approveAppointment called without a technician; ignoring.");
         return;
       }
+
+      let approvedAppt = null;
       persist((prev) =>
-        prev.map((a) =>
-          a.id === id ? { ...a, status: "upcoming", technician } : a
-        )
+        prev.map((a) => {
+          if (a.id !== id) return a;
+          approvedAppt = { ...a, status: "upcoming", technician };
+          return approvedAppt;
+        })
       );
+
+      if (approvedAppt) {
+        sendApprovalEmail(approvedAppt);
+      }
     },
     [persist, isAdmin]
   );
