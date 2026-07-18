@@ -1,8 +1,22 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { ArrowUp, ClipboardList, Users, Boxes } from "lucide-react";
 import MetricCard from "../components/MetricCard.jsx";
-import { currency } from "../utils/format.js";
+import { currency, statusTone } from "../utils/format.js";
 import { STATUSES } from "../data/seedData.js";
+
+// Solid fill colors matching the badge tones used in WorkOrders.jsx
+const TONE_FILL = {
+  green: "#22C55E",
+  amber: "#F59E0B",
+  red: "#EF4444",
+  blue: "#3B82F6",
+  teal: "#14B8A6",
+  gray: "#94A3B8",
+};
+
+function barFill(tone) {
+  return TONE_FILL[tone] || TONE_FILL.gray;
+}
 
 // Destructure data and derived from props instead of context
 export default function Dashboard({ data, derived }) {
@@ -66,9 +80,10 @@ export default function Dashboard({ data, derived }) {
                 <div>{s}</div>
                 <div className="h-2 overflow-hidden rounded-full bg-surface-2">
                   <div
-                    className="h-full rounded-full bg-accent"
+                    className="h-full rounded-full"
                     style={{
                       width: `${Math.max(4, ((derived.statusCounts[s] || 0) / (data.workOrders.length || 1)) * 100)}%`,
+                      backgroundColor: barFill(statusTone(s)),
                     }}
                   />
                 </div>
