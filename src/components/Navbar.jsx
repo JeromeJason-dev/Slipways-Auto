@@ -16,7 +16,8 @@ function Navbar() {
 
   // Appointments is a self-service page tied to a signed-in user's
   // bookings, so only show the link once someone is authenticated.
-  const links = isAuthenticated
+  const links = 
+  isAuthenticated && !isAdmin
     ? [...navLinks, { to: "/appointments", label: "Appointments" }]
     : navLinks;
 
