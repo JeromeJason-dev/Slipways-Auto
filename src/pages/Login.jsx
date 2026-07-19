@@ -24,7 +24,7 @@ export const Login = () => {
   // Helper function to handle conditional redirection
   const handleUserRedirect = (email) => {
     if (email?.toLowerCase().endsWith('@slipways.com')) {
-      navigate('/admin'); // Send admin users to the Admin Dashboard console
+      navigate('/dashboard'); // Send admin users to the Admin Dashboard console
     } else {
       navigate('/'); // Send regular customers to the public homepage
     }

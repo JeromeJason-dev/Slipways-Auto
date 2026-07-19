@@ -3,7 +3,7 @@ import { Plus, Search } from "lucide-react";
 import { useData } from "../context/DataContext";
 import { STATUSES } from "../data/seedData";
 import { currency, initials, statusTone } from "../utils/format";
-import { btnPrimaryClass } from "../utils/styles";
+
 
 export default function WorkOrders({ onNew, newBtnRef }) {
   const { data, derived, setWorkOrderStatus } = useData();

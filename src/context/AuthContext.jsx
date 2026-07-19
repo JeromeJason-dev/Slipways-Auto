@@ -17,6 +17,13 @@ import {
 
 const AuthContext = createContext(undefined);
 
+const buildUserData = (uid, email, name) => ({
+  uid,
+  email,
+  name,
+  role: email?.endsWith("@slipways.com") ? "admin" : "user",
+});
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,14 +31,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        const userData = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName,
-          role: firebaseUser.email?.endsWith("@slipways.com")
-            ? "admin"
-            : "user",
-        };
+        const userData = buildUserData(
+          firebaseUser.uid,
+          firebaseUser.email,
+          firebaseUser.displayName,
+        );
         setUser(userData);
       } else {
         setUser(null);
@@ -49,12 +53,11 @@ export const AuthProvider = ({ children }) => {
       password,
     );
     await updateProfile(userCredential.user, { displayName });
-    const userData = {
-      uid: userCredential.user.uid,
-      email: userCredential.user.email,
-      name: displayName,
-      role: email?.endsWith("@slipways.com") ? "admin" : "user",
-    };
+    const userData = buildUserData(
+      userCredential.user.uid,
+      userCredential.user.email,
+      displayName,
+    );
     setUser(userData);
     return userCredential.user;
   };
@@ -63,7 +66,7 @@ export const AuthProvider = ({ children }) => {
     return await signInWithEmailAndPassword(auth, email, password);
   };
 
-  // New: Google OAuth Handshake Function
+  //  Google OAuth Handshake Function
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     return await signInWithPopup(auth, provider);
