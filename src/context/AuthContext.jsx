@@ -1,7 +1,6 @@
 import {
   createContext,
   useContext,
-  useReducer,
   useEffect,
   useState,
 } from "react";
@@ -16,26 +15,10 @@ import {
   signInWithPopup,
 } from "firebase/auth";
 
-const initialState = {
-  user: null,
-};
-
-const authReducer = (state, action) => {
-  switch (action.type) {
-    case "LOGIN":
-    case "REGISTER":
-      return { ...state, user: action.payload };
-    case "LOGOUT":
-      return { ...state, user: null };
-    default:
-      return state;
-  }
-};
-
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(authReducer, initialState);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,9 +32,9 @@ export const AuthProvider = ({ children }) => {
             ? "admin"
             : "user",
         };
-        dispatch({ type: "LOGIN", payload: userData });
+        setUser(userData);
       } else {
-        dispatch({ type: "LOGOUT" });
+        setUser(null);
       }
       setLoading(false);
     });
@@ -72,7 +55,7 @@ export const AuthProvider = ({ children }) => {
       name: displayName,
       role: email?.endsWith("@slipways.com") ? "admin" : "user",
     };
-    dispatch({ type: "REGISTER", payload: userData });
+    setUser(userData);
     return userCredential.user;
   };
 
@@ -88,15 +71,15 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await signOut(auth);
-    dispatch({ type: "LOGOUT" });
+    setUser(null);
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user: state.user,
-        isAdmin: state.user?.role === "admin",
-        isAuthenticated: !!state.user,
+        user,
+        isAdmin: user?.role === "admin",
+        isAuthenticated: !!user,
         login,
         register,
         loginWithGoogle,
