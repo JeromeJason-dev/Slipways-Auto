@@ -93,10 +93,10 @@ export default function SlipwaysAutoHome() {
   return (
     <div className="min-h-screen w-full bg-white font-sans text-[#0F1B2E]">
       {/* Hero */}
-      <section className="bg-[#0F1B2E] px-4 py-10 sm:px-6 lg:px-6 lg:py-15">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-12">
+      <section className="bg-[#0F1B2E] px-4 py-10 sm:px-6 sm:py-10 lg:py-10">
+        <div className="flex max-w-6xl flex-col gap-1 lg:flex-row lg:gap-5">
           {/* Left: text + CTA */}
-          <div className="w-full text-center lg:w-1/2 lg:text-left">
+          <div className="w-full text-center lg:pt-10 lg:text-left">
             <h1 className="text-3xl font-extrabold leading-tight text-white sm:text-5xl">
               Reliable <span className="text-[#C81E2C]">Automotive</span>{" "}
               Services Since 2005
@@ -107,7 +107,7 @@ export default function SlipwaysAutoHome() {
               restoration. Backed by decades of experience.
             </p>
             <Link to="/booking">
-              <PrimaryButton className="mt-6 w-full gap-2 sm:w-auto">
+              <PrimaryButton className="m-6 w-full gap-2 sm:w-auto">
                 Book an appointment
                 <ArrowRight size={22} strokeWidth={2.5} />
               </PrimaryButton>
@@ -190,7 +190,7 @@ export default function SlipwaysAutoHome() {
           </p>
         </div>
 
-        <div className="mx-auto mt-10 grid max-w-6xl gap-8 sm:grid-cols-2">
+        <div className=" mt-10 grid max-w-6xl gap-8 sm:grid-cols-2">
           {services.map((s) => (
             <div
               key={s.title}

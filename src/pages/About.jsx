@@ -205,7 +205,7 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <div className="mx-auto mt-10 grid max-w-5xl gap-6 sm:grid-cols-3">
+        <div className="m-15 mt-10 grid max-w-5xl gap-6 sm:grid-cols-3">
           {values.map((v) => (
             <div
               key={v.title}
