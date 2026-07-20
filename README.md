@@ -2,7 +2,6 @@
 
 A full-stack shop management platform for auto repair shops — a public marketing/booking site paired with an authenticated admin dashboard for tracking work orders, customers, invoices, inventory, appointments, and revenue.
 
----
 
 ## Overview
 
@@ -13,7 +12,12 @@ Slipways Auto has two sides:
 
 Authentication is powered by Firebase (email/password + Google sign-in), and appointment confirmation/decline emails are sent via EmailJS.
 
----
+
+## Problem 
+Many Auto repair shops have so much happening during working hours and barely have time to manually track the business work orders, inventory and invoice. Customers also have hard time trying to book appointments since they have to physically go to the shop and book the appointment.
+
+## Solution
+This website basically bridges the gap for customers to easily book appointments directly to the business and receive automatic notification via email once the appointment is approved or declined. It also helps the admin and staff to easily manage their business by tracking their inventories, invoices and work orders.
 
 ## Features
 
@@ -37,7 +41,6 @@ Authentication is powered by Firebase (email/password + Google sign-in), and app
 - **Accessible UI** — focus-trapped modals, keyboard (Esc/Tab) support, ARIA roles/labels on nav, tabs, and a live save-status region.
 - **Error handling** — a top-level `ErrorBoundary` guards the app from unhandled render errors.
 
----
 
 ## Tech Stack
 
@@ -53,7 +56,6 @@ Authentication is powered by Firebase (email/password + Google sign-in), and app
 | Transactional email      | [EmailJS](https://www.emailjs.com/) (appointment approval/decline notifications) |
 | State persistence (local) | Browser `localStorage` |
 
----
 
 ## Project Structure
 
@@ -112,7 +114,6 @@ public/
 └── data.json                          # Seed dataset for the dashboard demo
 ```
 
----
 
 ## Getting Started
 
@@ -145,7 +146,6 @@ npm run preview   # Preview the production build locally
 npm run lint       # Run ESLint
 ```
 
----
 
 ## Future Roadmap
 
