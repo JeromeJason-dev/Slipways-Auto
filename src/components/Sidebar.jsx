@@ -38,14 +38,14 @@ export function Sidebar({ derived, resetData }) {
                       : n.id === "appointments"
                         ?derived.appointmentsToday?.length
                         : null;
-                // "dashboard" lives at the index route, everything else nests under it
+                
                 const to = n.id === "dashboard" ? "/dashboard" : `/dashboard/${n.id}`;
 
                 return (
                   <NavLink
                     key={n.id}
                     to={to}
-                    end={n.id === "dashboard"} // don't match sub-routes for the index link
+                    end={n.id === "dashboard"} 
                     role="tab"
                     className={({ isActive }) =>
                       `flex items-center gap-2.5 px-4 py-2 text-xs font-medium transition-all border-l-2 ${
@@ -59,11 +59,7 @@ export function Sidebar({ derived, resetData }) {
                       <>
                         <Icon size={14} className={isActive ? "text-red-500" : "text-slate-400"} />
                         <span className="flex-1">{n.label}</span>
-                        {!!badge && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white bg-red-500">
-                            {badge}
-                          </span>
-                        )}
+                        
                       </>
                     )}
                   </NavLink>
